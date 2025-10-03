@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-import matplotlib.pyplot as plt
 
 @st.cache_data
 def load_data():
@@ -19,9 +17,6 @@ st.markdown("### Satellite View of Ethnic Groups in the Middle East & North Afri
 # Sidebar
 st.sidebar.markdown("## 🧭 MENA Navigation")
 year = st.sidebar.slider("**Select Year**", 1946, 2021, 2021)
-
-# Map style selector - SIMPLIFIED
-map_style = st.sidebar.radio("**Map Style**", ["Satellite View", "Political View"])
 
 # MENA regions - ISRAEL ADDED TO MASHRIQ
 subregions = {
@@ -55,48 +50,47 @@ with tab1:
         colors = px.colors.qualitative.Set3
         title = f"🛰️ {year} - {selected_region}"
     
-    # Create the map
-    fig = px.choropleth(region_data,
-                       locations="statename",
-                       locationmode="country names",
-                       color="group",
-                       scope="asia",
-                       hover_name="statename",
-                       hover_data={"percentage": ":.1f%", "group": True},
-                       color_discrete_sequence=colors,
-                       title=title)
-    
-    # SIMPLIFIED MAP STYLES - FIXED VERSION
-    if map_style == "Satellite View":
+    # Create the map - SIMPLE & WORKING SATELLITE
+    if not region_data.empty:
+        fig = px.choropleth(region_data,
+                           locations="statename",
+                           locationmode="country names",
+                           color="group",
+                           scope="asia",
+                           hover_name="statename",
+                           hover_data={"percentage": ":.1f%", "group": True},
+                           color_discrete_sequence=colors,
+                           title=title)
+        
+        # WORKING SATELLITE STYLE - NO BLACK BACKGROUND
         fig.update_geos(
             visible=True,
             showcountries=True,
             countrycolor="white",
+            countrywidth=0.5,
             showcoastlines=True,
-            coastlinecolor="blue",
+            coastlinecolor="cyan",
             showocean=True,
-            oceancolor="lightblue",
+            oceancolor="rgba(0, 100, 200, 0.3)",
+            showlakes=True,
+            lakecolor="blue",
             projection_type="natural earth",
+            landcolor="lightgray",
+            bgcolor='rgba(173, 216, 230, 0.1)',  # Light blue, not black
             lonaxis_range=[-20, 60],
             lataxis_range=[0, 45]
         )
         
         fig.update_layout(
             height=600,
-            paper_bgcolor='lightblue',
+            paper_bgcolor='white',  # White background
+            plot_bgcolor='white',
+            font=dict(color='black', size=12),
+            title_font_color='black',
             margin=dict(l=0, r=0, t=50, b=0)
         )
-    else:
-        # Political view
-        fig.update_geos(
-            visible=False,
-            projection_type="natural earth",
-            lonaxis_range=[-20, 60],
-            lataxis_range=[0, 45]
-        )
-        fig.update_layout(height=600)
-    
-    st.plotly_chart(fig, use_container_width=True)
+        
+        st.plotly_chart(fig, use_container_width=True)
     
     # Historical context
     if year == 1946:
@@ -107,25 +101,26 @@ with tab1:
         st.info("🌍 **2021 Context**: Current ethnic distributions with modern borders")
     
     # Regional summary
-    st.subheader(f"📊 {selected_region} Summary - {year}")
-    cols = st.columns(4)
-    
-    with cols[0]:
-        dominant_groups = region_data.loc[region_data.groupby('statename')['percentage'].idxmax()]
-        top_group = dominant_groups['group'].value_counts().index[0]
-        st.metric("🏆 Dominant Group", top_group)
-    
-    with cols[1]:
-        unique_groups = region_data['group'].nunique()
-        st.metric("🎭 Ethnic Groups", unique_groups)
-    
-    with cols[2]:
-        total_countries = region_data['statename'].nunique()
-        st.metric("🗺️ Countries", total_countries)
-    
-    with cols[3]:
-        avg_diversity = region_data.groupby('statename')['group'].nunique().mean()
-        st.metric("📈 Diversity Score", f"{avg_diversity:.1f}")
+    if not region_data.empty:
+        st.subheader(f"📊 {selected_region} Summary - {year}")
+        cols = st.columns(4)
+        
+        with cols[0]:
+            dominant_groups = region_data.loc[region_data.groupby('statename')['percentage'].idxmax()]
+            top_group = dominant_groups['group'].value_counts().index[0]
+            st.metric("🏆 Dominant Group", top_group)
+        
+        with cols[1]:
+            unique_groups = region_data['group'].nunique()
+            st.metric("🎭 Ethnic Groups", unique_groups)
+        
+        with cols[2]:
+            total_countries = region_data['statename'].nunique()
+            st.metric("🗺️ Countries", total_countries)
+        
+        with cols[3]:
+            avg_diversity = region_data.groupby('statename')['group'].nunique().mean()
+            st.metric("📈 Diversity Score", f"{avg_diversity:.1f}")
 
 with tab2:
     st.subheader("Country Ethnic Profile")
@@ -135,13 +130,17 @@ with tab2:
     if not country_data.empty:
         col1, col2 = st.columns([2, 1])
         with col1:
-            fig_treemap = px.treemap(country_data, path=['group'], values='percentage',
-                                   title=f"Ethnic Composition of {selected_country}")
-            st.plotly_chart(fig_treemap, use_container_width=True)
+            # Use bar chart instead of treemap for better performance
+            fig_bar = px.bar(country_data.sort_values('percentage', ascending=False),
+                           x='group', y='percentage',
+                           title=f"Ethnic Composition of {selected_country}",
+                           color='group')
+            fig_bar.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
+            fig_bar.update_layout(xaxis_tickangle=45)
+            st.plotly_chart(fig_bar, use_container_width=True)
         with col2:
             st.metric("Total Groups", len(country_data))
             st.metric("Largest Group", f"{country_data['percentage'].max():.1f}%")
-            # Diversity index
             diversity = 1 - sum((country_data['percentage']/100)**2)
             st.metric("Diversity Index", f"{diversity:.3f}")
 
