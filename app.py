@@ -1,10 +1,8 @@
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
-# Remove: from wordcloud import WordCloud
 
 @st.cache_data
 def load_data():
@@ -22,13 +20,13 @@ st.markdown("### Satellite View of Ethnic Groups in the Middle East & North Afri
 st.sidebar.markdown("## 🧭 MENA Navigation")
 year = st.sidebar.slider("**Select Year**", 1946, 2021, 2021)
 
-# Map style selector
+# Map style selector - SIMPLIFIED
 map_style = st.sidebar.radio("**Map Style**", ["Satellite View", "Political View"])
 
 # MENA regions - ISRAEL ADDED TO MASHRIQ
 subregions = {
     'Maghreb': ['Morocco', 'Algeria', 'Tunisia', 'Libya', 'Mauritania'],
-    'Mashriq': ['Egypt', 'Sudan', 'Jordan', 'Lebanon', 'Syria', 'Iraq', 'Palestine', 'Israel'],  # ISRAEL ADDED
+    'Mashriq': ['Egypt', 'Sudan', 'Jordan', 'Lebanon', 'Syria', 'Iraq', 'Palestine', 'Israel'],
     'Gulf States': ['Saudi Arabia', 'Yemen', 'Oman', 'UAE', 'Qatar', 'Kuwait', 'Bahrain'],
     'All MENA': list(df['statename'].unique())
 }
@@ -68,50 +66,30 @@ with tab1:
                        color_discrete_sequence=colors,
                        title=title)
     
-    # SATELLITE STYLE MAP
+    # SIMPLIFIED MAP STYLES - FIXED VERSION
     if map_style == "Satellite View":
         fig.update_geos(
             visible=True,
-            resolution=50,
             showcountries=True,
-            countrycolor="yellow",
-            countrywidth=1.5,
+            countrycolor="white",
             showcoastlines=True,
-            coastlinecolor="white",
-            coastlinewidth=2,
+            coastlinecolor="blue",
             showocean=True,
-            oceancolor="rgba(0, 90, 181, 0.7)",
-            showlakes=True,
-            lakecolor="rgba(0, 90, 181, 0.6)",
-            showrivers=True,
-            rivercolor="rgba(0, 90, 181, 0.8)",
+            oceancolor="lightblue",
             projection_type="natural earth",
-            landcolor="rgba(120, 120, 120, 0.4)",
-            bgcolor='rgba(0, 0, 0, 0.8)',
             lonaxis_range=[-20, 60],
             lataxis_range=[0, 45]
         )
         
         fig.update_layout(
-            height=700,
-            geo=dict(
-                bgcolor='black',
-                lakecolor='darkblue',
-                landcolor='darkgray'
-            ),
-            paper_bgcolor='black',
-            plot_bgcolor='black',
-            font=dict(color='white', size=12),
-            title_font_color='white',
+            height=600,
+            paper_bgcolor='lightblue',
             margin=dict(l=0, r=0, t=50, b=0)
         )
     else:
         # Political view
         fig.update_geos(
             visible=False,
-            resolution=50,
-            showcountries=True,
-            countrycolor="white",
             projection_type="natural earth",
             lonaxis_range=[-20, 60],
             lataxis_range=[0, 45]
@@ -122,11 +100,11 @@ with tab1:
     
     # Historical context
     if year == 1946:
-        st.info("🌍 **1947 Context**: Post-World War II, UN Partition Plan for Palestine, early independence movements")
+        st.info("🌍 **1946 Context**: Post-World War II, colonial borders being redrawn")
     elif year == 1990:
-        st.info("🌍 **1990 Context**: Pre-Gulf War, major regional shifts upcoming, Cold War ending")
+        st.info("🌍 **1990 Context**: Pre-Gulf War, major regional shifts upcoming")
     elif year == 2021:
-        st.info("🌍 **2021 Context**: Current ethnic distributions with modern borders, post-Arab Spring era")
+        st.info("🌍 **2021 Context**: Current ethnic distributions with modern borders")
     
     # Regional summary
     st.subheader(f"📊 {selected_region} Summary - {year}")
