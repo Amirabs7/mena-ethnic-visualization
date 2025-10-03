@@ -5,11 +5,8 @@ import plotly.express as px
 @st.cache_data
 def load_data():
     df = pd.read_csv('mena_ethnicity_enhanced_final.csv')
-    # FIX: Update Mauritania terminology
-    df['group'] = df['group'].replace({
-        'Arab-Berber': 'Arab-Amazigh',
-        'Berbers': 'Amazigh'
-    })
+    # UPDATE: Change Berber to Amazigh as requested
+    df['group'] = df['group'].replace({'Berbers': 'Amazigh'})
     return df
 
 df = load_data()
@@ -24,16 +21,18 @@ st.markdown("### Ethnic Composition Across Middle East & North Africa")
 st.sidebar.markdown("## 🧭 Navigation")
 year = st.sidebar.slider("**Select Year**", 1946, 2021, 2021)
 
-# Simple country selector - NO REGIONS
+# Get available countries from dataset
 all_countries = sorted(df['statename'].unique())
+
+# FIX: Include Palestine in default selection
 selected_countries = st.sidebar.multiselect(
     "**Select Countries**", 
     all_countries, 
-    default=['Egypt', 'Saudi Arabia', 'Israel', 'Morocco', 'Iran']
+    default=['Egypt', 'Saudi Arabia', 'Israel', 'Morocco', 'Palestine']  # Palestine added
 )
 
-# Single tab for simplicity
-tab1, tab2, tab3 = st.tabs(["🗺️ Ethnic Map", "📊 Country Analysis", "📈 Group Analysis"])
+# Only 2 clear tabs
+tab1, tab2 = st.tabs(["🗺️ Ethnic Map", "📊 Country & Group Analysis"])
 
 with tab1:
     st.subheader("MENA Ethnic Distribution Map")
@@ -45,7 +44,7 @@ with tab1:
         region_data = df[df['to'] >= year]
     
     if not region_data.empty:
-        # SIMPLE WORKING MAP - no complex satellite styling
+        # Clean, working map
         fig = px.choropleth(region_data,
                            locations="statename",
                            locationmode="country names",
@@ -55,12 +54,12 @@ with tab1:
                            color_discrete_sequence=px.colors.qualitative.Bold,
                            title=f"Ethnic Groups Distribution - {year}")
         
-        # Clean, working map settings
+        # MENA-focused map
         fig.update_geos(
             visible=False,
             projection_type="natural earth",
-            lonaxis_range=[-20, 60],  # MENA focus
-            lataxis_range=[0, 45]     # MENA focus
+            lonaxis_range=[-20, 60],
+            lataxis_range=[0, 45]
         )
         
         fig.update_layout(height=600)
@@ -78,67 +77,55 @@ with tab1:
         st.warning("No data available for selected filters")
 
 with tab2:
-    st.subheader("Country Ethnic Composition")
+    st.subheader("Detailed Analysis")
     
-    if selected_countries:
-        for country in selected_countries:
+    # Two columns for clear separation
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### 🏛️ Country Profile")
+        
+        if selected_countries:
+            country = st.selectbox("Select Country for Details", selected_countries)
             country_data = df[(df['statename'] == country) & (df['to'] >= year)]
             
             if not country_data.empty:
-                st.markdown(f"#### {country}")
+                # Pie chart for country composition
+                fig_pie = px.pie(country_data, 
+                                values='percentage', 
+                                names='group',
+                                title=f"Ethnic Composition of {country}",
+                                color_discrete_sequence=px.colors.qualitative.Set3)
+                st.plotly_chart(fig_pie, use_container_width=True)
                 
-                col1, col2 = st.columns([3, 1])
-                
-                with col1:
-                    # Horizontal bar chart for better readability
-                    fig = px.bar(country_data.sort_values('percentage', ascending=True),
-                                y='group', x='percentage', orientation='h',
-                                title=f"Ethnic Groups in {country}",
-                                color='percentage',
-                                color_continuous_scale='Viridis')
-                    st.plotly_chart(fig, use_container_width=True)
-                
-                with col2:
-                    st.metric("Groups", len(country_data))
-                    st.metric("Largest", f"{country_data['percentage'].max():.1f}%")
-                    if len(country_data) > 1:
-                        diversity = 1 - sum((country_data['percentage']/100)**2)
-                        st.metric("Diversity", f"{diversity:.2f}")
-                
-                st.markdown("---")
-
-with tab3:
-    st.subheader("Ethnic Group Analysis")
+                # Country stats
+                st.metric("Total Ethnic Groups", len(country_data))
+                st.metric("Majority Group", f"{country_data['percentage'].max():.1f}%")
+                if len(country_data) > 1:
+                    diversity = 1 - sum((country_data['percentage']/100)**2)
+                    st.metric("Diversity Index", f"{diversity:.2f}")
     
-    # Working timeline for specific country
-    st.markdown("#### Ethnic Evolution Over Time")
-    timeline_country = st.selectbox("Select Country for Timeline", sorted(df['statename'].unique()))
-    
-    country_timeline = df[df['statename'] == timeline_country]
-    
-    if not country_timeline.empty:
-        # Group by decade for cleaner timeline
-        country_timeline['decade'] = (country_timeline['from'] // 10) * 10
-        decade_avg = country_timeline.groupby(['decade', 'group'])['percentage'].mean().reset_index()
+    with col2:
+        st.markdown("#### 👥 Ethnic Group Focus")
         
-        fig = px.line(decade_avg, 
-                     x='decade', y='percentage', color='group',
-                     title=f"Ethnic Composition in {timeline_country} (by decade)",
-                     markers=True)
-        st.plotly_chart(fig, use_container_width=True)
-    
-    # Ethnic group distribution
-    st.markdown("#### Ethnic Group Distribution")
-    selected_ethnicity = st.selectbox("Select Ethnic Group", sorted(df['group'].unique()))
-    ethnic_data = df[(df['group'] == selected_ethnicity) & (df['to'] >= year)]
-    
-    if not ethnic_data.empty:
-        fig = px.bar(ethnic_data.sort_values('percentage', ascending=True),
-                    y='statename', x='percentage', orientation='h',
-                    title=f"'{selected_ethnicity}' Population Distribution",
-                    color='percentage',
-                    color_continuous_scale='Blues')
-        st.plotly_chart(fig, use_container_width=True)
+        ethnic_group = st.selectbox("Select Ethnic Group", sorted(df['group'].unique()))
+        ethnic_data = df[(df['group'] == ethnic_group) & (df['to'] >= year)]
+        
+        if not ethnic_data.empty:
+            # Horizontal bar chart for group distribution
+            fig_bar = px.bar(ethnic_data.sort_values('percentage', ascending=True),
+                            y='statename', x='percentage', orientation='h',
+                            title=f"'{ethnic_group}' Distribution",
+                            color='percentage',
+                            color_continuous_scale='Blues')
+            st.plotly_chart(fig_bar, use_container_width=True)
+            
+            # Group stats
+            st.metric("Countries Present", ethnic_data['statename'].nunique())
+            st.metric("Total Population", f"{ethnic_data['percentage'].sum():.1f}%")
+            max_country = ethnic_data.loc[ethnic_data['percentage'].idxmax(), 'statename']
+            max_pct = ethnic_data['percentage'].max()
+            st.metric("Largest Presence", f"{max_country} ({max_pct:.1f}%)")
 
 # Footer
 st.markdown("---")
