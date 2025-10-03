@@ -1,7 +1,8 @@
 #  MENA Ethnic Diversity Dashboard
 
+https://mena-ethnic-visualization-chbree9gc8fzao7ijvkmfr.streamlit.app/
 
-Interactive satellite-view dashboard exploring ethnic composition across 20 Middle East & North Africa countries (1946-2021).
+Interactive satellite-view dashboard exploring ethnic composition across 20 Middle East & North Africa countries (1946-2021). 
 
 ##  Overview
 This project visualizes ethnic distributions across the MENA region with:
