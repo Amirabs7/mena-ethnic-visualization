@@ -14,7 +14,6 @@ def load_data():
     
     # Update Palestine data for 2023 - add Israeli settlers
     if 'Palestine' in df['statename'].values:
-        # Add Israeli settlers data for Palestine
         settlers_data = {
             'statename': 'Palestine',
             'group': 'Israeli Settlers', 
@@ -22,30 +21,24 @@ def load_data():
             'from': 2023,
             'to': 2023
         }
-        # Remove any existing settlers data and add new
         df = df[~((df['statename'] == 'Palestine') & (df['group'] == 'Israeli Settlers'))]
         settlers_df = pd.DataFrame([settlers_data])
         df = pd.concat([df, settlers_df], ignore_index=True)
     
-    # Update Tunisia composition
+    # FIX: Tunisia composition - 98% Arab-Amazigh, 2% Others
     if 'Tunisia' in df['statename'].values:
-        # Update Arab-Amazigh percentage
-        df.loc[(df['statename'] == 'Tunisia') & (df['group'] == 'Arab-Amazigh'), 'percentage'] = 98.0
-        
-        # Add European minority
-        european_data = {
-            'statename': 'Tunisia',
-            'group': 'European',
-            'percentage': 1.0,
-            'from': 2000,
-            'to': 2021
-        }
-        european_df = pd.DataFrame([european_data])
-        df = pd.concat([df, european_df], ignore_index=True)
+        # Remove all existing Tunisia data and replace with correct composition
+        df = df[df['statename'] != 'Tunisia']
+        tunisia_data = [
+            {'statename': 'Tunisia', 'group': 'Arab-Amazigh', 'percentage': 98.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Tunisia', 'group': 'Others', 'percentage': 2.0, 'from': 2000, 'to': 2021}
+        ]
+        tunisia_df = pd.DataFrame(tunisia_data)
+        df = pd.concat([df, tunisia_df], ignore_index=True)
     
-    # ADD: UAE Ethnicity Data 2000-2021
-    uae_ethnicity_data = [
-        # 2021 Data (most recent)
+    # ADD: UAE Detailed Ethnicity Data 2000-2021
+    uae_detailed_data = [
+        # 2021 Data
         {'statename': 'UAE', 'group': 'Indians', 'percentage': 27.49, 'from': 2021, 'to': 2021},
         {'statename': 'UAE', 'group': 'Pakistanis', 'percentage': 12.69, 'from': 2021, 'to': 2021},
         {'statename': 'UAE', 'group': 'Emiratis', 'percentage': 11.48, 'from': 2021, 'to': 2021},
@@ -56,37 +49,11 @@ def load_data():
         {'statename': 'UAE', 'group': 'Nepalese/Sri Lankans', 'percentage': 3.17, 'from': 2021, 'to': 2021},
         {'statename': 'UAE', 'group': 'Chinese', 'percentage': 2.11, 'from': 2021, 'to': 2021},
         {'statename': 'UAE', 'group': 'Others', 'percentage': 38.55, 'from': 2021, 'to': 2021},
-        
-        # Previous years data... (keeping your existing UAE data)
     ]
     
-    # ADD: Gulf Countries Foreigner Data 2000-2021
-    gulf_data = []
-    
-    # Saudi Arabia Foreigner Data
-    saudi_years = [2000, 2005, 2010, 2015, 2020, 2021]
-    saudi_foreigners = [25.0, 27.0, 31.0, 33.0, 38.0, 38.5]
-    saudi_nationals = [75.0, 73.0, 69.0, 67.0, 62.0, 61.5]
-    
-    for i, year in enumerate(saudi_years):
-        gulf_data.extend([
-            {'statename': 'Saudi Arabia', 'group': 'Saudis', 'percentage': saudi_nationals[i], 'from': year, 'to': year},
-            {'statename': 'Saudi Arabia', 'group': 'Foreigners', 'percentage': saudi_foreigners[i], 'from': year, 'to': year}
-        ])
-    
-    # Qatar, Kuwait, Oman, Bahrain data... (keeping your existing Gulf data)
-    
-    # Remove any existing Gulf countries data and add new comprehensive data
-    gulf_countries = ['UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain']
-    df = df[~df['statename'].isin(gulf_countries)]
-    
-    # Add UAE data
-    uae_df = pd.DataFrame(uae_ethnicity_data)
-    df = pd.concat([df, uae_df], ignore_index=True)
-    
-    # Add other Gulf countries data
-    gulf_df = pd.DataFrame(gulf_data)
-    df = pd.concat([df, gulf_df], ignore_index=True)
+    # Add UAE detailed data (this will supplement existing UAE data)
+    uae_detailed_df = pd.DataFrame(uae_detailed_data)
+    df = pd.concat([df, uae_detailed_df], ignore_index=True)
     
     return df
 
@@ -260,10 +227,11 @@ with tab3:
     else:
         st.warning(f"No data available for {selected_ethnic_group} in {year}")
 
-# FOOTER RESTORED - This was accidentally removed in the previous version
+# FOOTER WITH DATA SOURCES - THIS WAS MISSING
 st.markdown("---")
 st.markdown("**Data Sources**: EPR Core 2021 + Estimates | **Coverage**: 20 countries, 54 ethnic groups, 2000-2021")
 st.markdown("**Data Corrections Applied**: ")
-st.markdown("- Mauritania (Arab-Amazigh), Palestine (Israeli Settlers 15%), Tunisia (Arab-Amazigh 98% + European 1%)")
-st.markdown("- UAE: Comprehensive ethnicity data 2000-2021")
-st.markdown("- Gulf Countries: Foreigner percentages 2000-2021 (Qatar 89.5%, Kuwait 72.5%, UAE 88.5%, Bahrain 55.5%, Oman 48.5%, Saudi 38.5%)")
+st.markdown("- Mauritania: Arab-Berber → Arab-Amazigh")
+st.markdown("- Palestine: Added Israeli Settlers (15%) for 2023") 
+st.markdown("- Tunisia: 98% Arab-Amazigh + 2% Others")
+st.markdown("- UAE: Added detailed ethnicity breakdown for 2021")
