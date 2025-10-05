@@ -85,47 +85,63 @@ with tab2:
     with col1:
         st.markdown("#### 🏛️ Country Profile")
         
-        if selected_countries:
-            country = st.selectbox("Select Country for Details", selected_countries)
-            country_data = df[(df['statename'] == country) & (df['to'] >= year)]
+        # FIX: Make country selection independent from sidebar
+        country_for_details = st.selectbox(
+            "Select Country for Details", 
+            all_countries,
+            key="country_details"
+        )
+        
+        country_data = df[(df['statename'] == country_for_details) & (df['to'] >= year)]
+        
+        if not country_data.empty:
+            # Pie chart for country composition
+            fig_pie = px.pie(country_data, 
+                            values='percentage', 
+                            names='group',
+                            title=f"Ethnic Composition of {country_for_details}",
+                            color_discrete_sequence=px.colors.qualitative.Set3)
+            st.plotly_chart(fig_pie, use_container_width=True)
             
-            if not country_data.empty:
-                # Pie chart for country composition
-                fig_pie = px.pie(country_data, 
-                                values='percentage', 
-                                names='group',
-                                title=f"Ethnic Composition of {country}",
-                                color_discrete_sequence=px.colors.qualitative.Set3)
-                st.plotly_chart(fig_pie, use_container_width=True)
-                
-                # Country stats
-                st.metric("Total Ethnic Groups", len(country_data))
-                st.metric("Majority Group", f"{country_data['percentage'].max():.1f}%")
-                if len(country_data) > 1:
-                    diversity = 1 - sum((country_data['percentage']/100)**2)
-                    st.metric("Diversity Index", f"{diversity:.2f}")
+            # Country stats
+            st.metric("Total Ethnic Groups", len(country_data))
+            st.metric("Majority Group", f"{country_data['percentage'].max():.1f}%")
+            if len(country_data) > 1:
+                diversity = 1 - sum((country_data['percentage']/100)**2)
+                st.metric("Diversity Index", f"{diversity:.2f}")
+        else:
+            st.warning(f"No data available for {country_for_details} in {year}")
     
     with col2:
         st.markdown("#### 👥 Ethnic Group Focus")
         
-        ethnic_group = st.selectbox("Select Ethnic Group", sorted(df['group'].unique()))
-        ethnic_data = df[(df['group'] == ethnic_group) & (df['to'] >= year)]
-        
-        if not ethnic_data.empty:
-            # Horizontal bar chart for group distribution
-            fig_bar = px.bar(ethnic_data.sort_values('percentage', ascending=True),
-                            y='statename', x='percentage', orientation='h',
-                            title=f"'{ethnic_group}' Distribution",
-                            color='percentage',
-                            color_continuous_scale='Blues')
-            st.plotly_chart(fig_bar, use_container_width=True)
+        # FIX: Only show ethnic groups for the selected country
+        if 'country_for_details' in locals() and not country_data.empty:
+            available_groups = sorted(country_data['group'].unique())
+            ethnic_group = st.selectbox(
+                "Select Ethnic Group", 
+                available_groups,
+                key="ethnic_group_details"
+            )
             
-            # Group stats
-            st.metric("Countries Present", ethnic_data['statename'].nunique())
-            st.metric("Total Population", f"{ethnic_data['percentage'].sum():.1f}%")
-            max_country = ethnic_data.loc[ethnic_data['percentage'].idxmax(), 'statename']
-            max_pct = ethnic_data['percentage'].max()
-            st.metric("Largest Presence", f"{max_country} ({max_pct:.1f}%)")
+            # Show data for selected ethnic group in selected country
+            ethnic_data = country_data[country_data['group'] == ethnic_group]
+            
+            if not ethnic_data.empty:
+                st.metric(f"{ethnic_group} in {country_for_details}", 
+                         f"{ethnic_data['percentage'].iloc[0]:.1f}%")
+                
+                # Show all countries where this group exists for context
+                all_group_data = df[(df['group'] == ethnic_group) & (df['to'] >= year)]
+                if not all_group_data.empty:
+                    fig_bar = px.bar(all_group_data.sort_values('percentage', ascending=True),
+                                    y='statename', x='percentage', orientation='h',
+                                    title=f"'{ethnic_group}' Distribution Across Region",
+                                    color='percentage',
+                                    color_continuous_scale='Blues')
+                    st.plotly_chart(fig_bar, use_container_width=True)
+        else:
+            st.info("Select a country first to view ethnic group details")
 
 # Footer
 st.markdown("---")
