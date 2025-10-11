@@ -16,18 +16,17 @@ def load_data():
     # Update Mauritania from Arab-Berber to Arab-Amazigh
     df['group'] = df['group'].replace({'Arab-Berber': 'Arab-Amazigh'})
     
-    # Update Palestine data for 2023 - add Israeli settlers
+    # FIX: Palestine data - realistic percentages
     if 'Palestine' in df['statename'].values:
-        settlers_data = {
-            'statename': 'Palestine',
-            'group': 'Israeli Settlers', 
-            'percentage': 15.0,
-            'from': 2023,
-            'to': 2023
-        }
-        df = df[~((df['statename'] == 'Palestine') & (df['group'] == 'Israeli Settlers'))]
-        settlers_df = pd.DataFrame([settlers_data])
-        df = pd.concat([df, settlers_df], ignore_index=True)
+        # Remove all existing Palestine data and replace with realistic composition
+        df = df[df['statename'] != 'Palestine']
+        palestine_data = [
+            {'statename': 'Palestine', 'group': 'Palestinian Arabs', 'percentage': 83.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Palestine', 'group': 'Israeli Settlers', 'percentage': 15.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Palestine', 'group': 'Others', 'percentage': 2.0, 'from': 2000, 'to': 2021}
+        ]
+        palestine_df = pd.DataFrame(palestine_data)
+        df = pd.concat([df, palestine_df], ignore_index=True)
     
     # FIX: Tunisia composition - 98% Arab-Amazigh, 2% Others
     if 'Tunisia' in df['statename'].values:
@@ -39,12 +38,16 @@ def load_data():
         tunisia_df = pd.DataFrame(tunisia_data)
         df = pd.concat([df, tunisia_df], ignore_index=True)
     
-    # FIX: UAE data - ONLY Emiratis (9.78%) vs Foreigners (90.22%)
+    # FIX: UAE data - Apply Gulf logic with realistic percentages
     if 'UAE' in df['statename'].values:
         df = df[df['statename'] != 'UAE']
         uae_data = [
-            {'statename': 'UAE', 'group': 'Emiratis', 'percentage': 9.78, 'from': 2000, 'to': 2021},
-            {'statename': 'UAE', 'group': 'Foreigners', 'percentage': 90.22, 'from': 2000, 'to': 2021}
+            {'statename': 'UAE', 'group': 'Emiratis', 'percentage': 11.5, 'from': 2000, 'to': 2021},
+            {'statename': 'UAE', 'group': 'South Asians', 'percentage': 59.0, 'from': 2000, 'to': 2021},
+            {'statename': 'UAE', 'group': 'Other Arabs', 'percentage': 12.0, 'from': 2000, 'to': 2021},
+            {'statename': 'UAE', 'group': 'East Asians', 'percentage': 8.0, 'from': 2000, 'to': 2021},
+            {'statename': 'UAE', 'group': 'Westerners', 'percentage': 5.0, 'from': 2000, 'to': 2021},
+            {'statename': 'UAE', 'group': 'Others', 'percentage': 4.5, 'from': 2000, 'to': 2021}
         ]
         uae_df = pd.DataFrame(uae_data)
         df = pd.concat([df, uae_df], ignore_index=True)
@@ -309,6 +312,6 @@ with tab3:
     else:
         st.warning("No diversity data available for the selected year")
 
-# CLEAN FOOTER - NO DUPLICATES
+# CLEAN FOOTER
 st.markdown("---")
 st.markdown("**Data Sources**: EPR Core 2021 + Estimates")
