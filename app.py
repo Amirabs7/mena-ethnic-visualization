@@ -72,8 +72,65 @@ selected_countries = st.sidebar.multiselect(
     default=all_countries
 )
 
-# 2 tabs only
-tab1, tab2 = st.tabs(["🏛️ Country Profile", "👥 Ethnic Group Focus"])
+# QUICK INSIGHTS SIDEBAR
+st.sidebar.markdown("## 📈 Quick Insights")
+
+# Calculate diversity for all countries
+country_diversity = []
+for country in all_countries:
+    country_data = df[(df['statename'] == country) & (df['to'] >= year)]
+    if not country_data.empty:
+        # Use most recent data for each country
+        most_recent_year = country_data['to'].max()
+        country_data_recent = country_data[country_data['to'] == most_recent_year]
+        
+        if len(country_data_recent) > 1:
+            diversity = 1 - sum((country_data_recent['percentage']/100)**2)
+            country_diversity.append({
+                'country': country, 
+                'diversity': diversity,
+                'groups_count': len(country_data_recent)
+            })
+
+if country_diversity:
+    # Find most and least diverse countries
+    most_diverse = max(country_diversity, key=lambda x: x['diversity'])
+    least_diverse = min(country_diversity, key=lambda x: x['diversity'])
+    
+    st.sidebar.metric(
+        "Most Diverse Country", 
+        f"{most_diverse['country']}", 
+        f"{most_diverse['diversity']:.3f}"
+    )
+    st.sidebar.metric(
+        "Least Diverse Country", 
+        f"{least_diverse['country']}", 
+        f"{least_diverse['diversity']:.3f}"
+    )
+
+# Find most widespread ethnic group
+group_distribution = []
+for group in df['group'].unique():
+    group_data = df[(df['group'] == group) & (df['to'] >= year)]
+    if not group_data.empty:
+        countries_with_group = group_data['statename'].nunique()
+        total_presence = group_data['percentage'].sum()
+        group_distribution.append({
+            'group': group, 
+            'countries': countries_with_group,
+            'total_presence': total_presence
+        })
+
+if group_distribution:
+    most_widespread = max(group_distribution, key=lambda x: x['countries'])
+    st.sidebar.metric(
+        "Most Widespread Group", 
+        f"{most_widespread['group']}", 
+        f"{most_widespread['countries']} countries"
+    )
+
+# 3 tabs with diversity ranking
+tab1, tab2, tab3 = st.tabs(["🏛️ Country Profile", "👥 Ethnic Group Focus", "📊 Diversity Ranking"])
 
 with tab1:
     st.subheader("Country Profile - Ethnic Composition")
@@ -159,6 +216,55 @@ with tab2:
         
     else:
         st.warning(f"No data available for {selected_ethnic_group}")
+
+with tab3:
+    st.subheader("Country Diversity Ranking")
+    st.markdown("### Ethnic Diversity Index Across MENA Countries")
+    
+    if country_diversity:
+        # Create diversity ranking dataframe
+        diversity_df = pd.DataFrame(country_diversity)
+        diversity_df = diversity_df.sort_values('diversity', ascending=False)
+        diversity_df['diversity'] = diversity_df['diversity'].round(3)
+        diversity_df['rank'] = range(1, len(diversity_df) + 1)
+        
+        # Display ranking table
+        st.dataframe(
+            diversity_df[['rank', 'country', 'diversity', 'groups_count']].rename(columns={
+                'rank': 'Rank',
+                'country': 'Country', 
+                'diversity': 'Diversity Index',
+                'groups_count': 'Ethnic Groups'
+            }),
+            use_container_width=True,
+            hide_index=True
+        )
+        
+        # Diversity index explanation
+        st.markdown("---")
+        st.markdown("**About Diversity Index**:")
+        st.markdown("""
+        - **Range**: 0 (completely homogeneous) to 1 (maximum diversity)
+        - **Calculation**: 1 - Σ(percentage²) 
+        - Higher values indicate more ethnic diversity
+        - Lower values indicate more ethnic homogeneity
+        """)
+        
+        # Visualize diversity ranking
+        fig_diversity = px.bar(
+            diversity_df.head(15),  # Show top 15 for clarity
+            x='diversity', 
+            y='country',
+            orientation='h',
+            title="Top 15 Most Ethnically Diverse Countries",
+            color='diversity',
+            color_continuous_scale='Viridis'
+        )
+        fig_diversity.update_layout(yaxis={'categoryorder': 'total ascending'})
+        st.plotly_chart(fig_diversity, use_container_width=True)
+        
+    else:
+        st.warning("No diversity data available for the selected year")
 
 # SIMPLE FOOTER
 st.markdown("---")
