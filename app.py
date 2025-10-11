@@ -61,9 +61,8 @@ st.markdown("### Ethnic Composition Across Middle East & North Africa")
 
 # ACADEMIC FOCUS NOTE
 st.info("""
-**Academic Focus Note**: This analysis concentrates on **citizen populations and historical ethnic groups** 
-within each country. While Gulf states have highly diverse resident populations due to labor migration, 
-this dashboard focuses on the ethnic composition of **national citizenries** for academic comparative analysis.
+**Academic Focus Note**: This analysis concentrates on **historical ethnic groups and long-standing diversity patterns**. 
+Gulf citizen populations are treated as homogeneous national groups for comparative purposes, reflecting their demographic reality.
 """)
 
 # Sidebar
@@ -82,8 +81,10 @@ selected_countries = st.sidebar.multiselect(
 # QUICK INSIGHTS SIDEBAR
 st.sidebar.markdown("## 📈 Quick Insights")
 
-# Calculate diversity for all countries - FOCUS ON CITIZEN POPULATIONS
+# Calculate diversity for all countries - PROPER CITIZEN FOCUS
 country_diversity = []
+gulf_citizen_groups = ['Emiratis', 'Saudis', 'Qataris', 'Kuwaitis', 'Omanis', 'Bahrainis']
+
 for country in all_countries:
     country_data = df[(df['statename'] == country) & (df['to'] >= year)]
     if not country_data.empty:
@@ -91,34 +92,36 @@ for country in all_countries:
         most_recent_year = country_data['to'].max()
         country_data_recent = country_data[country_data['to'] == most_recent_year]
         
-        # For Gulf countries, focus only on citizen groups
+        # For Gulf countries, we consider the citizen population as one homogeneous group
         gulf_countries = ['UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain']
         if country in gulf_countries:
-            # Filter to only show citizen groups (exclude 'Foreigners')
-            citizen_data = country_data_recent[country_data_recent['group'] != 'Foreigners']
-            if len(citizen_data) > 0:
-                diversity = 1 - sum((citizen_data['percentage']/100)**2)
-                majority_percentage = citizen_data['percentage'].max()
-                groups_count = len(citizen_data)
-                category = 'Gulf Citizen Population'
-            else:
-                continue  # Skip if no citizen data
+            # For Gulf countries, diversity is essentially 0 (homogeneous citizenry)
+            diversity = 0.0
+            majority_percentage = 100.0  # Citizen population is treated as 100% homogeneous
+            groups_count = 1
+            category = 'Gulf Citizen Population'
+            
         else:
-            # For non-Gulf countries, use all data
+            # For non-Gulf countries, calculate actual ethnic diversity
             if len(country_data_recent) > 1:
                 diversity = 1 - sum((country_data_recent['percentage']/100)**2)
                 majority_percentage = country_data_recent['percentage'].max()
                 groups_count = len(country_data_recent)
                 
-                # Categorize based on citizen diversity
-                if majority_percentage > 80:
+                # Categorize based on actual ethnic diversity
+                if majority_percentage > 90:
                     category = 'Highly Homogeneous'
-                elif majority_percentage > 60:
+                elif majority_percentage > 70:
+                    category = 'Moderately Homogeneous'
+                elif majority_percentage > 50:
                     category = 'Moderately Diverse'
                 else:
                     category = 'Highly Diverse'
             else:
-                continue
+                diversity = 0.0
+                majority_percentage = 100.0
+                groups_count = 1
+                category = 'Highly Homogeneous'
         
         country_diversity.append({
             'country': country, 
@@ -129,28 +132,29 @@ for country in all_countries:
         })
 
 if country_diversity:
-    # For insights, use all countries but show Gulf citizens separately
-    citizen_diversity_countries = [c for c in country_diversity]
+    # Filter out Gulf countries for "true diversity" insights
+    true_diversity_countries = [c for c in country_diversity if c['category'] != 'Gulf Citizen Population']
     
-    if citizen_diversity_countries:
-        most_diverse = max(citizen_diversity_countries, key=lambda x: x['diversity'])
-        least_diverse = min(citizen_diversity_countries, key=lambda x: x['diversity'])
+    if true_diversity_countries:
+        most_diverse = max(true_diversity_countries, key=lambda x: x['diversity'])
+        least_diverse = min(true_diversity_countries, key=lambda x: x['diversity'])
         
         st.sidebar.metric(
-            "Most Diverse Citizenry", 
+            "Most Ethnically Diverse", 
             f"{most_diverse['country']}", 
             f"{most_diverse['diversity']:.3f}"
         )
         st.sidebar.metric(
-            "Most Homogeneous Citizenry", 
+            "Most Ethnically Homogeneous", 
             f"{least_diverse['country']}", 
             f"{least_diverse['diversity']:.3f}"
         )
     
-    # Find most widespread ethnic group (focus on historical/citizen groups)
+    # Find most widespread ethnic group (excluding Gulf citizen groups)
     group_distribution = []
+    excluded_groups = ['Foreigners', 'Emiratis', 'Saudis', 'Qataris', 'Kuwaitis', 'Omanis', 'Bahrainis']
     for group in df['group'].unique():
-        if group != 'Foreigners':  # Focus on citizen/historical groups
+        if group not in excluded_groups:
             group_data = df[(df['group'] == group) & (df['to'] >= year)]
             if not group_data.empty:
                 countries_with_group = group_data['statename'].nunique()
@@ -169,8 +173,8 @@ if country_diversity:
             f"{most_widespread['countries']} countries"
         )
 
-# 3 tabs with citizen-focused analysis
-tab1, tab2, tab3 = st.tabs(["🏛️ Country Profile", "👥 Ethnic Group Focus", "📊 Citizen Diversity"])
+# 3 tabs with proper citizen-focused analysis
+tab1, tab2, tab3 = st.tabs(["🏛️ Country Profile", "👥 Ethnic Group Focus", "📊 Ethnic Diversity"])
 
 with tab1:
     st.subheader("Country Profile - Ethnic Composition")
@@ -191,7 +195,7 @@ with tab1:
         # For Gulf countries, add note about citizen focus
         gulf_countries = ['UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain']
         if country_for_details in gulf_countries:
-            st.info(f"**Showing citizen population composition for {country_for_details}**")
+            st.info(f"**Note**: {country_for_details} shows citizen population composition. Foreign labor populations are excluded from diversity calculations.")
         
         fig_pie = px.pie(country_data, 
                         values='percentage', 
@@ -202,17 +206,18 @@ with tab1:
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Total Ethnic Groups", len(country_data))
+            st.metric("Total Groups", len(country_data))
         with col2:
             majority_group = country_data.loc[country_data['percentage'].idxmax(), 'group']
             majority_pct = country_data['percentage'].max()
-            st.metric("Majority Group", f"{majority_group} ({majority_pct:.1f}%)")
+            st.metric("Largest Group", f"{majority_group} ({majority_pct:.1f}%)")
         with col3:
-            if len(country_data) > 1:
-                diversity = 1 - sum((country_data['percentage']/100)**2)
-                st.metric("Diversity Index", f"{diversity:.2f}")
+            # Get the correct diversity score from our calculation
+            country_diversity_data = next((c for c in country_diversity if c['country'] == country_for_details), None)
+            if country_diversity_data:
+                st.metric("Diversity Index", f"{country_diversity_data['diversity']:.3f}")
             else:
-                st.metric("Diversity Index", "0.00")
+                st.metric("Diversity Index", "N/A")
                 
         st.markdown("#### Detailed Composition")
         display_data = country_data[['group', 'percentage']].sort_values('percentage', ascending=False)
@@ -263,14 +268,13 @@ with tab2:
         st.warning(f"No data available for {selected_ethnic_group}")
 
 with tab3:
-    st.subheader("Citizen Diversity Analysis")
+    st.subheader("Ethnic Diversity Analysis")
     
     st.markdown("""
-    ### Ethnic Diversity of Citizen Populations
+    ### Historical Ethnic Diversity Analysis
     
-    This analysis focuses specifically on the ethnic composition of **national citizenries** 
-    rather than total resident populations. This provides a more meaningful comparison of 
-    historical and long-standing ethnic diversity across MENA countries.
+    This analysis focuses on **long-standing ethnic diversity patterns** rather than temporary demographic features.
+    Gulf citizen populations are treated as homogeneous for comparative purposes, reflecting their demographic reality.
     """)
     
     if country_diversity:
@@ -280,57 +284,61 @@ with tab3:
         diversity_df['diversity'] = diversity_df['diversity'].round(3)
         diversity_df['rank'] = range(1, len(diversity_df) + 1)
         
-        # Display citizen diversity ranking
-        st.markdown("#### Citizen Population Diversity Ranking")
+        # Display the ranking
+        st.markdown("#### Ethnic Diversity Ranking")
         st.dataframe(
             diversity_df[['rank', 'country', 'diversity', 'groups_count', 'category']].rename(columns={
                 'rank': 'Rank',
                 'country': 'Country', 
                 'diversity': 'Diversity Index',
                 'groups_count': 'Ethnic Groups',
-                'category': 'Population Type'
+                'category': 'Type'
             }),
             use_container_width=True,
-            height=400
+            height=500
         )
         
-        # Visualize citizen diversity
+        # Visualize true ethnic diversity (excluding Gulf as homogeneous)
         st.markdown("---")
-        st.markdown("#### Citizen Ethnic Diversity Comparison")
+        st.markdown("#### Historical Ethnic Diversity Comparison")
         
-        fig_citizen = px.bar(
+        fig_diversity = px.bar(
             diversity_df,
             x='diversity', 
             y='country',
             orientation='h',
-            title="Ethnic Diversity of Citizen Populations",
+            title="Ethnic Diversity Across MENA (Gulf as Homogeneous)",
             color='category',
             color_discrete_map={
-                'Gulf Citizen Population': '#FFA726',
+                'Gulf Citizen Population': '#B0BEC5',  # Gray for homogeneous
                 'Highly Homogeneous': '#4ECDC4', 
-                'Moderately Diverse': '#45B7D1',
-                'Highly Diverse': '#96CEB4'
+                'Moderately Homogeneous': '#45B7D1',
+                'Moderately Diverse': '#96CEB4',
+                'Highly Diverse': '#2E7D32'
             }
         )
-        fig_citizen.update_layout(
+        fig_diversity.update_layout(
             yaxis={'categoryorder': 'total ascending'},
             height=600
         )
-        st.plotly_chart(fig_citizen, use_container_width=True)
+        st.plotly_chart(fig_diversity, use_container_width=True)
         
-        # Academic context
+        # Explanation
         st.markdown("---")
-        st.markdown("**Academic Context**:")
+        st.markdown("**Methodological Note**:")
         st.markdown("""
-        - **Gulf Citizen Populations**: Represent ethnic diversity among national citizens only
-        - **Historical Diversity**: Reflects long-standing ethnic pluralism in societies like Lebanon, Iraq
-        - **Methodological Focus**: Excludes temporary labor migration for comparative academic analysis
-        - **Diversity Index**: 1 - Σ(percentage²) | Range: 0 (homogeneous) to 1 (diverse)
+        - **Gulf States**: Treated as ethnically homogeneous citizen populations (diversity = 0)
+        - **Other Countries**: Diversity calculated from actual ethnic group distributions
+        - **Focus**: Long-standing historical diversity patterns, not temporary demographics
+        - **Diversity Index**: 1 - Σ(percentage²) | 0 = homogeneous, 1 = maximum diversity
         """)
         
     else:
         st.warning("No diversity data available for the selected year")
 
+# SIMPLE FOOTER
+st.markdown("---")
+st.markdown("**Data Sources**: EPR Core 2021 + Estimates | **Focus**: Historical Ethnic Diversity")
 # SIMPLE FOOTER
 st.markdown("---")
 st.markdown("**Data Sources**: EPR Core 2021 + Estimates | **Focus**: Citizen Population Analysis")
