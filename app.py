@@ -5,6 +5,24 @@ import plotly.express as px
 @st.cache_data
 def load_data():
     df = pd.read_csv('mena_ethnicity_enhanced_final.csv')
+    
+    # DEBUG: Check original data structure
+    st.sidebar.markdown("### DEBUG: Data Structure")
+    st.sidebar.write(f"Total rows: {len(df)}")
+    st.sidebar.write(f"Year range: {df['from'].min()} - {df['to'].max()}")
+    st.sidebar.write(f"Unique years in 'to': {sorted(df['to'].unique())}")
+    
+    # Check if data actually changes by year for a sample country
+    sample_country = df['statename'].iloc[0] if len(df) > 0 else None
+    if sample_country:
+        country_data = df[df['statename'] == sample_country]
+        st.sidebar.write(f"Sample country '{sample_country}' years: {sorted(country_data['to'].unique())}")
+        
+        # Check if percentages change across years
+        for year in sorted(country_data['to'].unique()):
+            year_data = country_data[country_data['to'] == year]
+            st.sidebar.write(f"  {year}: {len(year_data)} groups")
+    
     # UPDATE: Change Berber to Amazigh as requested
     df['group'] = df['group'].replace({'Berbers': 'Amazigh'})
     
@@ -27,7 +45,6 @@ def load_data():
     
     # FIX: Tunisia composition - 98% Arab-Amazigh, 2% Others
     if 'Tunisia' in df['statename'].values:
-        # Remove all existing Tunisia data and replace with correct composition
         df = df[df['statename'] != 'Tunisia']
         tunisia_data = [
             {'statename': 'Tunisia', 'group': 'Arab-Amazigh', 'percentage': 98.0, 'from': 2000, 'to': 2021},
@@ -36,24 +53,15 @@ def load_data():
         tunisia_df = pd.DataFrame(tunisia_data)
         df = pd.concat([df, tunisia_df], ignore_index=True)
     
-    # ADD: UAE Detailed Ethnicity Data 2000-2021
-    uae_detailed_data = [
-        # 2021 Data
-        {'statename': 'UAE', 'group': 'Indians', 'percentage': 27.49, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'Pakistanis', 'percentage': 12.69, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'Emiratis', 'percentage': 11.48, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'Bangladeshis', 'percentage': 7.4, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'Filipinos', 'percentage': 5.56, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'Iranians', 'percentage': 4.76, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'Egyptians', 'percentage': 4.23, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'Nepalese/Sri Lankans', 'percentage': 3.17, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'Chinese', 'percentage': 2.11, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'Others', 'percentage': 38.55, 'from': 2021, 'to': 2021},
-    ]
-    
-    # Add UAE detailed data (this will supplement existing UAE data)
-    uae_detailed_df = pd.DataFrame(uae_detailed_data)
-    df = pd.concat([df, uae_detailed_df], ignore_index=True)
+    # FIX: UAE data - ONLY Emiratis vs Foreigners
+    if 'UAE' in df['statename'].values:
+        df = df[df['statename'] != 'UAE']
+        uae_data = [
+            {'statename': 'UAE', 'group': 'Emiratis', 'percentage': 11.5, 'from': 2000, 'to': 2021},
+            {'statename': 'UAE', 'group': 'Foreigners', 'percentage': 88.5, 'from': 2000, 'to': 2021}
+        ]
+        uae_df = pd.DataFrame(uae_data)
+        df = pd.concat([df, uae_df], ignore_index=True)
     
     return df
 
@@ -78,90 +86,63 @@ selected_countries = st.sidebar.multiselect(
     default=all_countries
 )
 
-# 3 separate tabs
-tab1, tab2, tab3 = st.tabs(["🗺️ Ethnic Map", "🏛️ Country Profile", "👥 Ethnic Group Focus"])
+# Check data changes by year
+st.sidebar.markdown("### Data Changes by Year")
+selected_country_check = st.sidebar.selectbox("Check country data:", all_countries)
+country_check_data = df[df['statename'] == selected_country_check]
 
-# Initialize session state for clicked country
-if 'clicked_country' not in st.session_state:
-    st.session_state.clicked_country = None
+if not country_check_data.empty:
+    years_with_data = sorted(country_check_data['to'].unique())
+    st.sidebar.write(f"Years with data: {years_with_data}")
+    
+    # Check if data is identical across years
+    if len(years_with_data) > 1:
+        first_year = years_with_data[0]
+        last_year = years_with_data[-1]
+        
+        first_data = country_check_data[country_check_data['to'] == first_year].sort_values('group')
+        last_data = country_check_data[country_check_data['to'] == last_year].sort_values('group')
+        
+        if len(first_data) == len(last_data):
+            same_data = True
+            for (idx1, row1), (idx2, row2) in zip(first_data.iterrows(), last_data.iterrows()):
+                if row1['group'] != row2['group'] or abs(row1['percentage'] - row2['percentage']) > 0.1:
+                    same_data = False
+                    break
+            if same_data:
+                st.sidebar.warning(f"⚠️ Data identical for {first_year} and {last_year}")
+            else:
+                st.sidebar.success(f"✅ Data changes between {first_year} and {last_year}")
+
+# 2 tabs only
+tab1, tab2 = st.tabs(["🏛️ Country Profile", "👥 Ethnic Group Focus"])
 
 with tab1:
-    st.subheader("MENA Ethnic Distribution Map")
-    
-    # Filter data for selected countries and year
-    if selected_countries:
-        region_data = df[(df['statename'].isin(selected_countries)) & (df['to'] >= year)]
-    else:
-        region_data = df[df['to'] >= year]
-    
-    if not region_data.empty:
-        available_groups = sorted(region_data['group'].unique())
-        selected_group = st.selectbox(
-            "Select Ethnic Group to Display on Map",
-            available_groups,
-            key="map_group"
-        )
-        
-        group_data = region_data[region_data['group'] == selected_group]
-        
-        fig = px.choropleth(group_data,
-                           locations="statename",
-                           locationmode="country names",
-                           color="percentage",
-                           hover_name="statename",
-                           hover_data={"percentage": ":.1f%", "group": True},
-                           color_continuous_scale="Blues",
-                           title=f"'{selected_group}' Distribution - {year}",
-                           range_color=[0, group_data['percentage'].max()])
-        
-        fig.update_geos(
-            visible=False,
-            projection_type="natural earth",
-            lonaxis_range=[-20, 60],
-            lataxis_range=[0, 45],
-            showcountries=True,
-            countrycolor="black"
-        )
-        
-        fig.update_layout(height=600)
-        st.plotly_chart(fig, use_container_width=True)
-        
-        st.markdown("**Click on a country in the map to view its details in the Country Profile tab**")
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Countries Shown", len(selected_countries))
-        with col2:
-            st.metric("Selected Group", selected_group)
-        with col3:
-            st.metric("Year", year)
-            
-    else:
-        st.warning("No data available for selected filters")
-
-with tab2:
     st.subheader("Country Profile - Ethnic Composition")
-    
-    if st.session_state.clicked_country:
-        default_country = st.session_state.clicked_country
-        st.info(f"Showing details for: **{default_country}** (selected from map)")
-    else:
-        default_country = all_countries[0]
     
     country_for_details = st.selectbox(
         "Select Country for Details", 
         all_countries,
-        index=all_countries.index(default_country) if default_country in all_countries else 0,
         key="country_details"
     )
     
     country_data = df[(df['statename'] == country_for_details) & (df['to'] >= year)]
     
     if not country_data.empty:
+        # Show which year's data we're actually displaying
+        actual_years = country_data['to'].unique()
+        if len(actual_years) == 1:
+            st.info(f"Showing data from {actual_years[0]} (selected year: {year})")
+        else:
+            st.warning(f"Multiple years of data found: {sorted(actual_years)}. Using most recent.")
+            # Use most recent year's data
+            most_recent_year = max(actual_years)
+            country_data = country_data[country_data['to'] == most_recent_year]
+        
         fig_pie = px.pie(country_data, 
                         values='percentage', 
                         names='group',
-                        title=f"Ethnic Composition of {country_for_details} ({year})",
+                        title=f"Ethnic Composition of {country_for_details}",
                         color_discrete_sequence=px.colors.qualitative.Set3)
         st.plotly_chart(fig_pie, use_container_width=True)
         
@@ -184,10 +165,14 @@ with tab2:
         display_data['percentage'] = display_data['percentage'].round(1)
         st.dataframe(display_data, use_container_width=True)
         
-    else:
-        st.warning(f"No data available for {country_for_details} in {year}")
+        # Show data availability for this country across years
+        st.markdown("#### Data Availability Across Years")
+        country_all_years = df[df['statename'] == country_for_details]
+        year_counts = country_all_years.groupby('to').size()
+        st.write("Records per year:")
+        st.dataframe(year_counts.reset_index().rename(columns={0: 'Records', 'to': 'Year'}))
 
-with tab3:
+with tab2:
     st.subheader("Ethnic Group Focus - Regional Distribution")
     
     all_ethnic_groups = sorted(df['group'].unique())
@@ -200,9 +185,12 @@ with tab3:
     ethnic_data = df[(df['group'] == selected_ethnic_group) & (df['to'] >= year)]
     
     if not ethnic_data.empty:
-        fig_bar = px.bar(ethnic_data.sort_values('percentage', ascending=True),
+        # Use most recent data for each country
+        most_recent_data = ethnic_data.loc[ethnic_data.groupby('statename')['to'].idxmax()]
+        
+        fig_bar = px.bar(most_recent_data.sort_values('percentage', ascending=True),
                         y='statename', x='percentage', orientation='h',
-                        title=f"'{selected_ethnic_group}' Distribution Across MENA ({year})",
+                        title=f"'{selected_ethnic_group}' Distribution Across MENA",
                         color='percentage',
                         color_continuous_scale='Blues')
         fig_bar.update_layout(yaxis={'categoryorder':'total ascending'})
@@ -210,28 +198,23 @@ with tab3:
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Countries Present", ethnic_data['statename'].nunique())
+            st.metric("Countries Present", most_recent_data['statename'].nunique())
         with col2:
-            total_presence = ethnic_data['percentage'].sum()
+            total_presence = most_recent_data['percentage'].sum()
             st.metric("Total Regional Presence", f"{total_presence:.1f}%")
         with col3:
-            max_country = ethnic_data.loc[ethnic_data['percentage'].idxmax(), 'statename']
-            max_pct = ethnic_data['percentage'].max()
+            max_country = most_recent_data.loc[most_recent_data['percentage'].idxmax(), 'statename']
+            max_pct = most_recent_data['percentage'].max()
             st.metric("Largest Population", f"{max_country} ({max_pct:.1f}%)")
             
         st.markdown("#### Country-by-Country Distribution")
-        display_ethnic_data = ethnic_data[['statename', 'percentage']].sort_values('percentage', ascending=False)
+        display_ethnic_data = most_recent_data[['statename', 'percentage', 'to']].sort_values('percentage', ascending=False)
         display_ethnic_data['percentage'] = display_ethnic_data['percentage'].round(1)
         st.dataframe(display_ethnic_data, use_container_width=True)
         
     else:
         st.warning(f"No data available for {selected_ethnic_group} in {year}")
 
-# FOOTER WITH DATA SOURCES - THIS WAS MISSING
+# SIMPLE FOOTER
 st.markdown("---")
-st.markdown("**Data Sources**: EPR Core 2021 + Estimates | **Coverage**: 20 countries, 54 ethnic groups, 2000-2021")
-st.markdown("**Data Corrections Applied**: ")
-st.markdown("- Mauritania: Arab-Berber → Arab-Amazigh")
-st.markdown("- Palestine: Added Israeli Settlers (15%) for 2023") 
-st.markdown("- Tunisia: 98% Arab-Amazigh + 2% Others")
-st.markdown("- UAE: Added detailed ethnicity breakdown for 2021")
+st.markdown("**Data Sources**: EPR Core 2021 + Estimates")
