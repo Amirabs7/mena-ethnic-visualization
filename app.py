@@ -479,17 +479,6 @@ with tab5:
         fig_minority.update_layout(yaxis={'categoryorder': 'total ascending'})
         st.plotly_chart(fig_minority, use_container_width=True)
 
-# ADDITIONAL DASHBOARD IDEAS SECTION
-st.sidebar.markdown("---")
-st.sidebar.markdown("## 💡 Additional Analysis Ideas")
-st.sidebar.markdown("""
-- **Religious Diversity**: Separate from ethnic diversity
-- **Border Regions**: Compare neighboring countries' ethnic overlaps
-- **Historical Changes**: How compositions shifted over decades
-- **Urban vs Rural**: Major city diversity vs national averages
-- **Refugee Impact**: How displacement changed ethnic landscapes
-- **Conflict Correlation**: Diversity patterns in conflict zones
-""")
 
 # CLEAN FOOTER
 st.markdown("---")
