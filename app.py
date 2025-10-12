@@ -433,6 +433,50 @@ with tab4:
                 comparison_df = comparison_df.sort_values('Diversity Index', ascending=False)
                 st.dataframe(comparison_df, use_container_width=True, hide_index=True)
 
+# NEW CONFLICT & MIGRATION SECTION
+st.markdown("---")
+st.header("⚔️ Conflict & Migration Patterns (1967-Present)")
+
+st.markdown("""
+### How Major Conflicts Shaped MENA's Ethnic Landscape
+
+Understanding contemporary ethnic distributions requires looking at the forced migrations and displacements caused by decades of conflict.
+""")
+
+# Timeline of major conflicts
+conflicts = {
+    1967: "Six-Day War",
+    1973: "Yom Kippur War", 
+    1975: "Lebanese Civil War",
+    1980: "Iran-Iraq War",
+    1990: "Gulf War",
+    2003: "Iraq War",
+    2011: "Arab Spring",
+    2011: "Syrian Civil War",
+    2014: "Yemeni Civil War"
+}
+
+# Simple visualization
+st.subheader("Major Conflicts Timeline")
+for year, conflict in conflicts.items():
+    st.write(f"**{year}**: {conflict}")
+
+# Add migration impact notes
+st.subheader("Ethnic Migration Patterns")
+st.write("""
+- **Palestinians**: Multiple displacement waves post-1967, creating one of the world's longest-standing refugee populations
+- **Kurds**: Internal displacement in Iraq, Syria, Turkey - often crossing international borders
+- **Lebanese Christians**: Mass emigration during civil war, creating global diaspora
+- **Yemeni tribes**: Ongoing internal displacement affecting traditional tribal territories
+- **Syrians**: Largest recent refugee crisis (2011-present) reshaping regional demographics
+- **Iraqi Shia/Sunni**: Internal displacement following sectarian violence
+""")
+
+st.info("""
+**Note**: Current ethnic distributions reflect both historical settlement patterns and forced migrations due to conflict. 
+The data shown above represents post-conflict demographic realities as of 2021.
+""")
+
 # CLEAN FOOTER
 st.markdown("---")
 st.markdown("**Data Sources**: EPR Core 2021 + Estimates | Gulf citizen data based on demographic studies")
