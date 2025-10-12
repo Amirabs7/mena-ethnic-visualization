@@ -39,18 +39,64 @@ def load_data():
         df = pd.concat([df, tunisia_df], ignore_index=True)
     
     # FIX: UAE data - Apply Gulf logic with realistic percentages
-    if 'UAE' in df['statename'].values:
-        df = df[df['statename'] != 'UAE']
-        uae_data = [
-            {'statename': 'UAE', 'group': 'Emiratis', 'percentage': 11.5, 'from': 2000, 'to': 2021},
-            {'statename': 'UAE', 'group': 'South Asians', 'percentage': 59.0, 'from': 2000, 'to': 2021},
-            {'statename': 'UAE', 'group': 'Other Arabs', 'percentage': 12.0, 'from': 2000, 'to': 2021},
-            {'statename': 'UAE', 'group': 'East Asians', 'percentage': 8.0, 'from': 2000, 'to': 2021},
-            {'statename': 'UAE', 'group': 'Westerners', 'percentage': 5.0, 'from': 2000, 'to': 2021},
-            {'statename': 'UAE', 'group': 'Others', 'percentage': 4.5, 'from': 2000, 'to': 2021}
-        ]
-        uae_df = pd.DataFrame(uae_data)
-        df = pd.concat([df, uae_df], ignore_index=True)
+    # Remove any existing UAE data first
+    df = df[df['statename'] != 'UAE']
+    
+    # Add comprehensive UAE data
+    uae_data = [
+        # 2021 Data
+        {'statename': 'UAE', 'group': 'Emiratis', 'percentage': 11.5, 'from': 2021, 'to': 2021},
+        {'statename': 'UAE', 'group': 'South Asians', 'percentage': 59.0, 'from': 2021, 'to': 2021},
+        {'statename': 'UAE', 'group': 'Other Arabs', 'percentage': 12.0, 'from': 2021, 'to': 2021},
+        {'statename': 'UAE', 'group': 'East Asians', 'percentage': 8.0, 'from': 2021, 'to': 2021},
+        {'statename': 'UAE', 'group': 'Westerners', 'percentage': 5.0, 'from': 2021, 'to': 2021},
+        {'statename': 'UAE', 'group': 'Others', 'percentage': 4.5, 'from': 2021, 'to': 2021},
+    ]
+    
+    uae_df = pd.DataFrame(uae_data)
+    df = pd.concat([df, uae_df], ignore_index=True)
+    
+    # FIX: Other Gulf Countries - Focus on CITIZEN composition only
+    # Remove existing Gulf country data and replace with citizen-focused data
+    gulf_countries = ['Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain']
+    df = df[~df['statename'].isin(gulf_countries)]
+    
+    # Saudi Arabia - Citizen composition (religious sects)
+    saudi_data = [
+        {'statename': 'Saudi Arabia', 'group': 'Sunni Muslims', 'percentage': 85.0, 'from': 2000, 'to': 2021},
+        {'statename': 'Saudi Arabia', 'group': 'Shia Muslims', 'percentage': 15.0, 'from': 2000, 'to': 2021},
+    ]
+    
+    # Qatar - Citizen composition
+    qatar_data = [
+        {'statename': 'Qatar', 'group': 'Sunni Muslims', 'percentage': 90.0, 'from': 2000, 'to': 2021},
+        {'statename': 'Qatar', 'group': 'Shia Muslims', 'percentage': 10.0, 'from': 2000, 'to': 2021},
+    ]
+    
+    # Kuwait - Citizen composition (religious sects and Bedouin/Arab groups)
+    kuwait_data = [
+        {'statename': 'Kuwait', 'group': 'Sunni Muslims', 'percentage': 70.0, 'from': 2000, 'to': 2021},
+        {'statename': 'Kuwait', 'group': 'Shia Muslims', 'percentage': 30.0, 'from': 2000, 'to': 2021},
+    ]
+    
+    # Oman - Citizen composition (Ibadi Islam majority)
+    oman_data = [
+        {'statename': 'Oman', 'group': 'Ibadi Muslims', 'percentage': 75.0, 'from': 2000, 'to': 2021},
+        {'statename': 'Oman', 'group': 'Sunni Muslims', 'percentage': 15.0, 'from': 2000, 'to': 2021},
+        {'statename': 'Oman', 'group': 'Shia Muslims', 'percentage': 5.0, 'from': 2000, 'to': 2021},
+        {'statename': 'Oman', 'group': 'Hindu/Baloch', 'percentage': 5.0, 'from': 2000, 'to': 2021},
+    ]
+    
+    # Bahrain - Citizen composition (Sunni/Shia divide)
+    bahrain_data = [
+        {'statename': 'Bahrain', 'group': 'Shia Muslims', 'percentage': 65.0, 'from': 2000, 'to': 2021},
+        {'statename': 'Bahrain', 'group': 'Sunni Muslims', 'percentage': 35.0, 'from': 2000, 'to': 2021},
+    ]
+    
+    # Add all Gulf citizen data
+    gulf_citizen_data = saudi_data + qatar_data + kuwait_data + oman_data + bahrain_data
+    gulf_citizen_df = pd.DataFrame(gulf_citizen_data)
+    df = pd.concat([df, gulf_citizen_df], ignore_index=True)
     
     return df
 
@@ -64,9 +110,9 @@ st.markdown("### Ethnic Composition Across Middle East & North Africa")
 
 # ACADEMIC FOCUS NOTE - UPDATED
 st.info("""
-**Methodological Note**: The diversity index reflects total population composition, including both citizens and foreign residents. 
-Gulf states show high diversity scores due to their significant foreign labor populations, which are included in the calculations 
-alongside citizen groups for comprehensive demographic analysis.
+**Methodological Note**: Gulf state data focuses on **citizen population composition** (religious/ethnic groups among nationals). 
+Total population figures including foreign residents are shown separately for UAE. This approach provides meaningful 
+comparisons of historical and demographic patterns across the region.
 """)
 
 # Sidebar
@@ -102,7 +148,10 @@ for country in all_countries:
             # Categorize countries
             gulf_countries = ['UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain']
             if country in gulf_countries:
-                category = 'Gulf State'
+                if country == 'UAE':
+                    category = 'Gulf Total Population'
+                else:
+                    category = 'Gulf Citizen Population'
             elif majority_percentage > 80:
                 category = 'Highly Homogeneous'
             elif majority_percentage > 60:
@@ -173,6 +222,13 @@ with tab1:
         # Use most recent data
         most_recent_year = country_data['to'].max()
         country_data = country_data[country_data['to'] == most_recent_year]
+        
+        # Add contextual notes for Gulf countries
+        gulf_countries = ['Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain']
+        if country_for_details in gulf_countries:
+            st.info(f"**Showing citizen population composition for {country_for_details}**")
+        elif country_for_details == 'UAE':
+            st.info(f"**Showing total population composition for {country_for_details} (includes foreign residents)**")
         
         fig_pie = px.pie(country_data, 
                         values='percentage', 
@@ -249,8 +305,8 @@ with tab3:
     st.markdown("""
     ### Population Diversity Across MENA
     
-    The diversity index reflects the ethnic composition of total populations, providing insights into 
-    both historical ethnic distributions and contemporary demographic patterns across the region.
+    Diversity analysis distinguishes between Gulf citizen populations and total population compositions
+    to provide meaningful comparisons of historical ethnic and religious diversity patterns.
     """)
     
     if country_diversity:
@@ -267,8 +323,8 @@ with tab3:
                 'rank': 'Rank',
                 'country': 'Country', 
                 'diversity': 'Diversity Index',
-                'groups_count': 'Ethnic Groups',
-                'category': 'Type'
+                'groups_count': 'Groups',
+                'category': 'Population Type'
             }),
             use_container_width=True,
             height=500
@@ -286,8 +342,9 @@ with tab3:
             title="Population Diversity Across MENA Countries",
             color='category',
             color_discrete_map={
-                'Gulf State': '#FFA726',
-                'Highly Homogeneous': '#4ECDC4', 
+                'Gulf Total Population': '#FFA726',
+                'Gulf Citizen Population': '#4ECDC4',
+                'Highly Homogeneous': '#B0BEC5', 
                 'Moderately Diverse': '#45B7D1',
                 'Highly Diverse': '#2E7D32'
             }
@@ -300,13 +357,13 @@ with tab3:
         
         # Explanation
         st.markdown("---")
-        st.markdown("**About the Analysis**:")
+        st.markdown("**Methodological Notes**:")
         st.markdown("""
-        - **Scope**: Includes total population composition (citizens and residents)
-        - **Gulf States**: High diversity reflects significant foreign labor populations
-        - **Other Countries**: Diversity based on historical ethnic group distributions  
+        - **Gulf Citizen Populations**: Show religious/ethnic composition among nationals only
+        - **UAE**: Shows total population including foreign residents (for comparison)
+        - **Other Countries**: Based on total population ethnic composition
         - **Diversity Index**: 1 - Σ(percentage²) | Range: 0 (homogeneous) to 1 (diverse)
-        - **Interpretation**: Higher values indicate more ethnically diverse populations
+        - **Interpretation**: Higher values indicate more diverse populations
         """)
         
     else:
@@ -314,4 +371,4 @@ with tab3:
 
 # CLEAN FOOTER
 st.markdown("---")
-st.markdown("**Data Sources**: EPR Core 2021 + Estimates")
+st.markdown("**Data Sources**: EPR Core 2021 + Estimates | Gulf citizen data based on demographic studies")
