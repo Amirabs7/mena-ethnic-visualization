@@ -430,16 +430,6 @@ with tab4:
                 comparison_df = comparison_df.sort_values('Diversity Index', ascending=False)
                 st.dataframe(comparison_df, use_container_width=True, hide_index=True)
 
-# ADDITIONAL DASHBOARD IDEAS SECTION
-st.sidebar.markdown("---")
-st.sidebar.markdown("## 💡 Additional Analysis Ideas")
-st.sidebar.markdown("""
-- **Regional Clustering**: Group countries by diversity patterns  
-- **Minority Analysis**: Focus on groups <10% population
-- **Border Effects**: Compare neighboring countries
-- **Urban vs Rural**: Major city diversity patterns
-""")
-
 # CLEAN FOOTER
 st.markdown("---")
 st.markdown("**Data Sources**: EPR Core 2021 + Estimates | Gulf citizen data based on demographic studies")
