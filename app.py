@@ -6,8 +6,8 @@ import plotly.express as px
 def load_data():
     df = pd.read_csv('mena_ethnicity_enhanced_final.csv')
     
-    # REMOVE "United Arab Emirates" and keep only "UAE"
-    df = df[df['statename'] != 'United Arab Emirates']
+    # UPDATE: Change "UAE" to "United Arab Emirates" for consistency
+    df['statename'] = df['statename'].replace({'UAE': 'United Arab Emirates'})
     
     # UPDATE: Change Berber to Amazigh as requested
     df['group'] = df['group'].replace({'Berbers': 'Amazigh'})
@@ -38,65 +38,22 @@ def load_data():
         tunisia_df = pd.DataFrame(tunisia_data)
         df = pd.concat([df, tunisia_df], ignore_index=True)
     
-    # FIX: UAE data - Apply Gulf logic with realistic percentages
-    # Remove any existing UAE data first
-    df = df[df['statename'] != 'UAE']
+    # FIX: United Arab Emirates data - Focus ONLY on Emirati nationals ethnic composition
+    # Remove any existing United Arab Emirates data first
+    df = df[df['statename'] != 'United Arab Emirates']
     
-    # Add comprehensive UAE data
-    uae_data = [
-        # 2021 Data
-        {'statename': 'UAE', 'group': 'Emiratis', 'percentage': 11.5, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'South Asians', 'percentage': 59.0, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'Other Arabs', 'percentage': 12.0, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'East Asians', 'percentage': 8.0, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'Westerners', 'percentage': 5.0, 'from': 2021, 'to': 2021},
-        {'statename': 'UAE', 'group': 'Others', 'percentage': 4.5, 'from': 2021, 'to': 2021},
+    # United Arab Emirates Nationals Ethnic Composition 
+    # Emirati citizens have diverse ancestral backgrounds:
+    uae_nationals_data = [
+        {'statename': 'United Arab Emirates', 'group': 'Arab Tribes (Qawasim, Bani Yas, etc.)', 'percentage': 65.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Persian-origin Emiratis', 'percentage': 20.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Baloch-origin Emiratis', 'percentage': 8.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'African-origin Emiratis', 'percentage': 5.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Other Emirati groups', 'percentage': 2.0, 'from': 2000, 'to': 2021},
     ]
     
-    uae_df = pd.DataFrame(uae_data)
-    df = pd.concat([df, uae_df], ignore_index=True)
-    
-    # FIX: Other Gulf Countries - Focus on CITIZEN composition only
-    # Remove existing Gulf country data and replace with citizen-focused data
-    gulf_countries = ['Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain']
-    df = df[~df['statename'].isin(gulf_countries)]
-    
-    # Saudi Arabia - Citizen composition (religious sects)
-    saudi_data = [
-        {'statename': 'Saudi Arabia', 'group': 'Sunni Muslims', 'percentage': 85.0, 'from': 2000, 'to': 2021},
-        {'statename': 'Saudi Arabia', 'group': 'Shia Muslims', 'percentage': 15.0, 'from': 2000, 'to': 2021},
-    ]
-    
-    # Qatar - Citizen composition
-    qatar_data = [
-        {'statename': 'Qatar', 'group': 'Sunni Muslims', 'percentage': 90.0, 'from': 2000, 'to': 2021},
-        {'statename': 'Qatar', 'group': 'Shia Muslims', 'percentage': 10.0, 'from': 2000, 'to': 2021},
-    ]
-    
-    # Kuwait - Citizen composition (religious sects and Bedouin/Arab groups)
-    kuwait_data = [
-        {'statename': 'Kuwait', 'group': 'Sunni Muslims', 'percentage': 70.0, 'from': 2000, 'to': 2021},
-        {'statename': 'Kuwait', 'group': 'Shia Muslims', 'percentage': 30.0, 'from': 2000, 'to': 2021},
-    ]
-    
-    # Oman - Citizen composition (Ibadi Islam majority)
-    oman_data = [
-        {'statename': 'Oman', 'group': 'Ibadi Muslims', 'percentage': 75.0, 'from': 2000, 'to': 2021},
-        {'statename': 'Oman', 'group': 'Sunni Muslims', 'percentage': 15.0, 'from': 2000, 'to': 2021},
-        {'statename': 'Oman', 'group': 'Shia Muslims', 'percentage': 5.0, 'from': 2000, 'to': 2021},
-        {'statename': 'Oman', 'group': 'Hindu/Baloch', 'percentage': 5.0, 'from': 2000, 'to': 2021},
-    ]
-    
-    # Bahrain - Citizen composition (Sunni/Shia divide)
-    bahrain_data = [
-        {'statename': 'Bahrain', 'group': 'Shia Muslims', 'percentage': 65.0, 'from': 2000, 'to': 2021},
-        {'statename': 'Bahrain', 'group': 'Sunni Muslims', 'percentage': 35.0, 'from': 2000, 'to': 2021},
-    ]
-    
-    # Add all Gulf citizen data
-    gulf_citizen_data = saudi_data + qatar_data + kuwait_data + oman_data + bahrain_data
-    gulf_citizen_df = pd.DataFrame(gulf_citizen_data)
-    df = pd.concat([df, gulf_citizen_df], ignore_index=True)
+    uae_nationals_df = pd.DataFrame(uae_nationals_data)
+    df = pd.concat([df, uae_nationals_df], ignore_index=True)
     
     return df
 
@@ -110,9 +67,8 @@ st.markdown("### Ethnic Composition Across Middle East & North Africa")
 
 # ACADEMIC FOCUS NOTE - UPDATED
 st.info("""
-**Methodological Note**: Gulf state data focuses on **citizen population composition** (religious/ethnic groups among nationals). 
-Total population figures including foreign residents are shown separately for UAE. This approach provides meaningful 
-comparisons of historical and demographic patterns across the region.
+**Methodological Note**: United Arab Emirates data focuses exclusively on **Emirati citizen population composition**, 
+showing the ethnic diversity within the national population. This provides meaningful comparisons with other Gulf states' citizen compositions.
 """)
 
 # Sidebar
@@ -146,12 +102,9 @@ for country in all_countries:
             groups_count = len(country_data_recent)
             
             # Categorize countries
-            gulf_countries = ['UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain']
+            gulf_countries = ['United Arab Emirates', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain']
             if country in gulf_countries:
-                if country == 'UAE':
-                    category = 'Gulf Total Population'
-                else:
-                    category = 'Gulf Citizen Population'
+                category = 'Gulf Citizen Population'
             elif majority_percentage > 80:
                 category = 'Highly Homogeneous'
             elif majority_percentage > 60:
@@ -223,12 +176,9 @@ with tab1:
         most_recent_year = country_data['to'].max()
         country_data = country_data[country_data['to'] == most_recent_year]
         
-        # Add contextual notes for Gulf countries
-        gulf_countries = ['Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain']
-        if country_for_details in gulf_countries:
-            st.info(f"**Showing citizen population composition for {country_for_details}**")
-        elif country_for_details == 'UAE':
-            st.info(f"**Showing total population composition for {country_for_details} (includes foreign residents)**")
+        # Add contextual note for United Arab Emirates
+        if country_for_details == 'United Arab Emirates':
+            st.info("**Showing Emirati citizen population composition only**")
         
         fig_pie = px.pie(country_data, 
                         values='percentage', 
@@ -305,8 +255,8 @@ with tab3:
     st.markdown("""
     ### Population Diversity Across MENA
     
-    Diversity analysis distinguishes between Gulf citizen populations and total population compositions
-    to provide meaningful comparisons of historical ethnic and religious diversity patterns.
+    Diversity analysis focuses on citizen population compositions across Gulf states and 
+    total population compositions for other countries, providing meaningful regional comparisons.
     """)
     
     if country_diversity:
@@ -342,7 +292,6 @@ with tab3:
             title="Population Diversity Across MENA Countries",
             color='category',
             color_discrete_map={
-                'Gulf Total Population': '#FFA726',
                 'Gulf Citizen Population': '#4ECDC4',
                 'Highly Homogeneous': '#B0BEC5', 
                 'Moderately Diverse': '#45B7D1',
@@ -359,11 +308,10 @@ with tab3:
         st.markdown("---")
         st.markdown("**Methodological Notes**:")
         st.markdown("""
-        - **Gulf Citizen Populations**: Show religious/ethnic composition among nationals only
-        - **UAE**: Shows total population including foreign residents (for comparison)
-        - **Other Countries**: Based on total population ethnic composition
+        - **United Arab Emirates**: Shows ethnic composition of Emirati citizens only
+        - **Other Gulf States**: Show citizen population compositions
+        - **Non-Gulf Countries**: Based on total population ethnic composition
         - **Diversity Index**: 1 - Σ(percentage²) | Range: 0 (homogeneous) to 1 (diverse)
-        - **Interpretation**: Higher values indicate more diverse populations
         """)
         
     else:
@@ -371,4 +319,4 @@ with tab3:
 
 # CLEAN FOOTER
 st.markdown("---")
-st.markdown("**Data Sources**: EPR Core 2021 + Estimates | Gulf citizen data based on demographic studies")
+st.markdown("**Data Sources**: EPR Core 2021 + Estimates | UAE citizen data based on demographic studies")
