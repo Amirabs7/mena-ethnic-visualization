@@ -16,15 +16,14 @@ def load_data():
     # Update Mauritania from Arab-Berber to Arab-Amazigh
     df['group'] = df['group'].replace({'Arab-Berber': 'Arab-Amazigh'})
     
-    # FIX: Palestine data - more realistic percentages including Christians
+    # FIX: Palestine data - realistic percentages
     if 'Palestine' in df['statename'].values:
         # Remove all existing Palestine data and replace with realistic composition
         df = df[df['statename'] != 'Palestine']
         palestine_data = [
-            {'statename': 'Palestine', 'group': 'Palestinian Muslims', 'percentage': 81.5, 'from': 2000, 'to': 2021},
+            {'statename': 'Palestine', 'group': 'Palestinian Arabs', 'percentage': 83.0, 'from': 2000, 'to': 2021},
             {'statename': 'Palestine', 'group': 'Israeli Settlers', 'percentage': 15.0, 'from': 2000, 'to': 2021},
-            {'statename': 'Palestine', 'group': 'Palestinian Christians', 'percentage': 1.5, 'from': 2000, 'to': 2021},
-            {'statename': 'Palestine', 'group': 'Others', 'percentage': 2.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Palestine', 'group': 'Others', 'percentage': 2.0, 'from': 2000, 'to': 2021}
         ]
         palestine_df = pd.DataFrame(palestine_data)
         df = pd.concat([df, palestine_df], ignore_index=True)
@@ -87,7 +86,7 @@ def load_data():
         {'statename': 'Oman', 'group': 'Arab Omani - Hindu/Baloch', 'percentage': 5.0, 'from': 2000, 'to': 2021},
     ]
     
-    # Bahrain - Citizen composition (all Arab Bahraini with religious diversity)
+    # Bahrain - Citizen composition (all Arab Bahraini with religious diversity) - FIXED LABELS
     bahrain_data = [
         {'statename': 'Bahrain', 'group': 'Arab Bahraini - Shia Muslims', 'percentage': 65.0, 'from': 2000, 'to': 2021},
         {'statename': 'Bahrain', 'group': 'Arab Bahraini - Sunni Muslims', 'percentage': 35.0, 'from': 2000, 'to': 2021},
@@ -111,12 +110,11 @@ st.markdown("### Ethnic Composition Across Middle East & North Africa")
 # ACADEMIC FOCUS NOTE - UPDATED
 st.info("""
 **Methodological Note**: Gulf state data focuses on **citizen population composition** showing religious diversity within Arab national populations. 
-United Arab Emirates shows ethnic diversity within Emirati citizens. Palestine includes Christian minority population.
+United Arab Emirates shows ethnic diversity within Emirati citizens. This approach provides meaningful comparisons of demographic patterns.
 """)
 
 # Sidebar
 st.sidebar.markdown("## 🧭 Navigation")
-year = st.sidebar.slider("**Select Year**", 2000, 2021, 2021)
 
 # Get available countries from dataset
 all_countries = sorted(df['statename'].unique())
@@ -130,26 +128,18 @@ selected_countries = st.sidebar.multiselect(
 # QUICK INSIGHTS SIDEBAR
 st.sidebar.markdown("## 📈 Quick Insights")
 
-# Calculate diversity for all countries
+# Calculate diversity for all countries (using 2021 data only)
 country_diversity = []
-country_minority_data = []  # For minority analysis
-
 for country in all_countries:
-    country_data = df[(df['statename'] == country) & (df['to'] >= year)]
+    country_data = df[(df['statename'] == country) & (df['to'] == 2021)]  # Fixed to 2021 only
     if not country_data.empty:
         # Use most recent data for each country
-        most_recent_year = country_data['to'].max()
-        country_data_recent = country_data[country_data['to'] == most_recent_year]
+        country_data_recent = country_data
         
         if len(country_data_recent) > 1:
             diversity = 1 - sum((country_data_recent['percentage']/100)**2)
             majority_percentage = country_data_recent['percentage'].max()
             groups_count = len(country_data_recent)
-            
-            # Calculate minority groups (<10% population)
-            minority_groups = country_data_recent[country_data_recent['percentage'] < 10]
-            minority_count = len(minority_groups)
-            total_minority_percentage = minority_groups['percentage'].sum()
             
             # Categorize countries
             gulf_countries = ['United Arab Emirates', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain']
@@ -169,13 +159,6 @@ for country in all_countries:
                 'majority_percentage': majority_percentage,
                 'category': category
             })
-            
-            country_minority_data.append({
-                'country': country,
-                'minority_groups': minority_count,
-                'total_minority_percentage': total_minority_percentage,
-                'largest_minority': minority_groups['percentage'].max() if not minority_groups.empty else 0
-            })
 
 if country_diversity:
     # Find most and least diverse countries
@@ -193,17 +176,29 @@ if country_diversity:
         f"{least_diverse['diversity']:.3f}"
     )
     
-    # Find country with most minority groups
-    if country_minority_data:
-        most_minorities = max(country_minority_data, key=lambda x: x['minority_groups'])
+    # Find most widespread ethnic group
+    group_distribution = []
+    for group in df['group'].unique():
+        group_data = df[(df['group'] == group) & (df['to'] == 2021)]  # Fixed to 2021 only
+        if not group_data.empty:
+            countries_with_group = group_data['statename'].nunique()
+            total_presence = group_data['percentage'].sum()
+            group_distribution.append({
+                'group': group, 
+                'countries': countries_with_group,
+                'total_presence': total_presence
+            })
+
+    if group_distribution:
+        most_widespread = max(group_distribution, key=lambda x: x['countries'])
         st.sidebar.metric(
-            "Most Minority Groups", 
-            f"{most_minorities['country']}", 
-            f"{most_minorities['minority_groups']} groups"
+            "Most Widespread Group", 
+            f"{most_widespread['group']}", 
+            f"{most_widespread['countries']} countries"
         )
 
-# 5 TABS - ADDED MINORITY ANALYSIS TAB
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["🏛️ Country Profile", "👥 Ethnic Group Focus", "📊 Diversity Analysis", "🔍 Regional Comparisons", "📋 Minority Analysis"])
+# 4 TABS - ADDED NEW COMPARISON TAB
+tab1, tab2, tab3, tab4 = st.tabs(["🏛️ Country Profile", "👥 Ethnic Group Focus", "📊 Diversity Analysis", "🔍 Regional Comparisons"])
 
 with tab1:
     st.subheader("Country Profile - Ethnic Composition")
@@ -214,46 +209,43 @@ with tab1:
         key="country_details"
     )
     
-    country_data = df[(df['statename'] == country_for_details) & (df['to'] >= year)]
+    country_data = df[(df['statename'] == country_for_details) & (df['to'] == 2021)]  # Fixed to 2021 only
     
     if not country_data.empty:
         # Use most recent data
-        most_recent_year = country_data['to'].max()
-        country_data = country_data[country_data['to'] == most_recent_year]
+        country_data_recent = country_data
         
         # Add contextual note for Gulf countries
         gulf_countries = ['United Arab Emirates', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain']
         if country_for_details in gulf_countries:
             st.info("**Showing citizen population composition only**")
-        elif country_for_details == 'Palestine':
-            st.info("**Includes Palestinian Christian minority (1.5%)**")
         
         # Create two columns for pie chart and stats
         col_chart, col_stats = st.columns([2, 1])
         
         with col_chart:
-            fig_pie = px.pie(country_data, 
+            fig_pie = px.pie(country_data_recent, 
                             values='percentage', 
                             names='group',
-                            title=f"Ethnic Composition of {country_for_details}",
+                            title=f"Ethnic Composition of {country_for_details} (2021)",
                             color_discrete_sequence=px.colors.qualitative.Set3)
             st.plotly_chart(fig_pie, use_container_width=True)
         
         with col_stats:
-            st.metric("Data Year", most_recent_year)
-            st.metric("Total Groups", len(country_data))
-            majority_group = country_data.loc[country_data['percentage'].idxmax(), 'group']
-            majority_pct = country_data['percentage'].max()
+            st.metric("Data Year", "2021")
+            st.metric("Total Groups", len(country_data_recent))
+            majority_group = country_data_recent.loc[country_data_recent['percentage'].idxmax(), 'group']
+            majority_pct = country_data_recent['percentage'].max()
             st.metric("Largest Group", f"{majority_pct:.1f}%")
             
-            if len(country_data) > 1:
-                diversity = 1 - sum((country_data['percentage']/100)**2)
+            if len(country_data_recent) > 1:
+                diversity = 1 - sum((country_data_recent['percentage']/100)**2)
                 st.metric("Diversity Index", f"{diversity:.3f}")
             else:
                 st.metric("Diversity Index", "0.000")
                 
         st.markdown("#### Detailed Composition")
-        display_data = country_data[['group', 'percentage']].sort_values('percentage', ascending=False)
+        display_data = country_data_recent[['group', 'percentage']].sort_values('percentage', ascending=False)
         display_data['percentage'] = display_data['percentage'].round(1)
         st.dataframe(display_data, use_container_width=True, hide_index=True)
 
@@ -267,11 +259,11 @@ with tab2:
         key="ethnic_analysis"
     )
     
-    ethnic_data = df[(df['group'] == selected_ethnic_group) & (df['to'] >= year)]
+    ethnic_data = df[(df['group'] == selected_ethnic_group) & (df['to'] == 2021)]  # Fixed to 2021 only
     
     if not ethnic_data.empty:
         # Use most recent data for each country
-        most_recent_data = ethnic_data.loc[ethnic_data.groupby('statename')['to'].idxmax()]
+        most_recent_data = ethnic_data
         
         # Create metrics and chart
         col1, col2, col3, col4 = st.columns(4)
@@ -290,19 +282,18 @@ with tab2:
         
         fig_bar = px.bar(most_recent_data.sort_values('percentage', ascending=True),
                         y='statename', x='percentage', orientation='h',
-                        title=f"'{selected_ethnic_group}' Distribution Across MENA",
+                        title=f"'{selected_ethnic_group}' Distribution Across MENA (2021)",
                         color='percentage',
                         color_continuous_scale='Blues')
         fig_bar.update_layout(yaxis={'categoryorder':'total ascending'})
         st.plotly_chart(fig_bar, use_container_width=True)
             
         st.markdown("#### Country-by-Country Distribution")
-        display_ethnic_data = most_recent_data[['statename', 'percentage', 'to']].sort_values('percentage', ascending=False)
+        display_ethnic_data = most_recent_data[['statename', 'percentage']].sort_values('percentage', ascending=False)
         display_ethnic_data['percentage'] = display_ethnic_data['percentage'].round(1)
         display_ethnic_data = display_ethnic_data.rename(columns={
             'statename': 'Country', 
-            'percentage': 'Percentage',
-            'to': 'Data Year'
+            'percentage': 'Percentage'
         })
         st.dataframe(display_ethnic_data, use_container_width=True, hide_index=True)
         
@@ -313,7 +304,7 @@ with tab3:
     st.subheader("Diversity Analysis")
     
     st.markdown("""
-    ### Population Diversity Across MENA
+    ### Population Diversity Across MENA (2021 Data)
     
     **Note on Kuwait's Diversity**: Kuwait shows high diversity due to its balanced Sunni-Shia citizen composition (70-30 split).
     Countries like Lebanon and Israel have more complex ethnic diversity but different distribution patterns.
@@ -359,7 +350,7 @@ with tab3:
             x='diversity', 
             y='country',
             orientation='h',
-            title="Population Diversity Across MENA Countries",
+            title="Population Diversity Across MENA Countries (2021)",
             color='category',
             color_discrete_map={
                 'Gulf Citizen Population': '#4ECDC4',
@@ -374,16 +365,27 @@ with tab3:
         )
         st.plotly_chart(fig_diversity, use_container_width=True)
         
+        # Explanation
+        st.markdown("---")
+        st.markdown("**Methodological Notes**:")
+        st.markdown("""
+        - **United Arab Emirates**: Shows ethnic diversity within Emirati citizens
+        - **Other Gulf States**: Show religious diversity within Arab citizen populations
+        - **Non-Gulf Countries**: Based on total population ethnic composition
+        - **Diversity Index**: 1 - Σ(percentage²) | Range: 0 (homogeneous) to 1 (diverse)
+        - **Kuwait's high score**: Reflects balanced Sunni (70%) - Shia (30%) citizen distribution
+        """)
+        
     else:
-        st.warning("No diversity data available for the selected year")
+        st.warning("No diversity data available")
 
 with tab4:
     st.subheader("Regional Comparisons")
     
-    st.markdown("### Compare Multiple Countries")
+    st.markdown("### Compare Multiple Countries (2021 Data)")
     
     # FIX: Only use countries that actually exist in the dataset
-    available_for_comparison = [country for country in all_countries if country in ['Lebanon', 'Israel', 'Kuwait', 'United Arab Emirates', 'Iran', 'Egypt', 'Saudi Arabia', 'Palestine']]
+    available_for_comparison = [country for country in all_countries if country in ['Lebanon', 'Israel', 'Kuwait', 'United Arab Emirates', 'Iran', 'Egypt', 'Saudi Arabia']]
     
     # Country comparison selector - FIXED: Only use countries that exist
     compare_countries = st.multiselect(
@@ -394,15 +396,15 @@ with tab4:
     )
     
     if compare_countries:
-        compare_data = df[(df['statename'].isin(compare_countries)) & (df['to'] >= year)]
+        compare_data = df[(df['statename'].isin(compare_countries)) & (df['to'] == 2021)]  # Fixed to 2021 only
         if not compare_data.empty:
             # Use most recent data for each country
-            compare_recent = compare_data.loc[compare_data.groupby(['statename', 'group'])['to'].idxmax()]
+            compare_recent = compare_data
             
             # Grouped bar chart comparison
             fig_compare = px.bar(compare_recent, 
                                x='statename', y='percentage', color='group',
-                               title="Ethnic Composition Comparison",
+                               title="Ethnic Composition Comparison (2021)",
                                barmode='stack',
                                color_discrete_sequence=px.colors.qualitative.Bold)
             st.plotly_chart(fig_compare, use_container_width=True)
@@ -428,67 +430,14 @@ with tab4:
                 comparison_df = comparison_df.sort_values('Diversity Index', ascending=False)
                 st.dataframe(comparison_df, use_container_width=True, hide_index=True)
 
-with tab5:
-    st.subheader("Minority Group Analysis")
-    
-    st.markdown("### Analysis of Minority Populations (<10% of population)")
-    
-    if country_minority_data:
-        minority_df = pd.DataFrame(country_minority_data)
-        minority_df = minority_df.sort_values('total_minority_percentage', ascending=False)
-        
-        # Display minority analysis
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("#### Countries with Highest Minority Populations")
-            st.dataframe(
-                minority_df[['country', 'minority_groups', 'total_minority_percentage', 'largest_minority']].rename(columns={
-                    'country': 'Country',
-                    'minority_groups': 'Minority Groups',
-                    'total_minority_percentage': 'Total Minority %',
-                    'largest_minority': 'Largest Minority %'
-                }),
-                use_container_width=True,
-                height=400
-            )
-        
-        with col2:
-            st.markdown("#### Minority Group Insights")
-            st.markdown("""
-            **Key Findings**:
-            - Countries with high minority percentages often have complex ethnic histories
-            - Large minority populations can indicate historical migration patterns
-            - Some countries have many small minority groups rather than few large ones
-            - Gulf states show religious minorities within ethnically homogeneous populations
-            """)
-        
-        # Visualize minority distribution
-        st.markdown("---")
-        st.markdown("#### Total Minority Population by Country")
-        
-        fig_minority = px.bar(
-            minority_df.head(15),
-            x='total_minority_percentage', 
-            y='country',
-            orientation='h',
-            title="Total Minority Population Percentage (Groups <10%)",
-            color='minority_groups',
-            color_continuous_scale='Viridis'
-        )
-        fig_minority.update_layout(yaxis={'categoryorder': 'total ascending'})
-        st.plotly_chart(fig_minority, use_container_width=True)
-
 # ADDITIONAL DASHBOARD IDEAS SECTION
 st.sidebar.markdown("---")
 st.sidebar.markdown("## 💡 Additional Analysis Ideas")
 st.sidebar.markdown("""
-- **Religious Diversity**: Separate from ethnic diversity
-- **Border Regions**: Compare neighboring countries' ethnic overlaps
-- **Historical Changes**: How compositions shifted over decades
-- **Urban vs Rural**: Major city diversity vs national averages
-- **Refugee Impact**: How displacement changed ethnic landscapes
-- **Conflict Correlation**: Diversity patterns in conflict zones
+- **Regional Clustering**: Group countries by diversity patterns  
+- **Minority Analysis**: Focus on groups <10% population
+- **Border Effects**: Compare neighboring countries
+- **Urban vs Rural**: Major city diversity patterns
 """)
 
 # CLEAN FOOTER
