@@ -114,9 +114,7 @@ st.info("""
 United Arab Emirates shows ethnic diversity within Emirati citizens. Palestine includes Christian minority population.
 """)
 
-# Sidebar
-st.sidebar.markdown("## 🧭 Navigation")
-year = st.sidebar.slider("**Select Year**", 2000, 2021, 2021)
+
 
 # Get available countries from dataset
 all_countries = sorted(df['statename'].unique())
