@@ -97,6 +97,9 @@ def load_data():
     gulf_citizen_df = pd.DataFrame(gulf_citizen_data)
     df = pd.concat([df, gulf_citizen_df], ignore_index=True)
     
+    # FIX: Jordan - Update "Christians" to "Arab Christians"
+    df['group'] = df['group'].replace({'Christians': 'Arab Christians'})
+    
     return df
 
 df = load_data()
