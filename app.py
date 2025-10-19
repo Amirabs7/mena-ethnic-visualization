@@ -697,4 +697,27 @@ with tab5:
         {'group': 'Syrians', 'period': '2011-present', 'scale': '6.8M', 'primary_destinations': ['Turkey', 'Lebanon', 'Jordan', 'Europe']},
         {'group': 'Iraqis', 'period': '2003-present', 'scale': '9.2M', 'primary_destinations': ['Syria', 'Jordan', 'Iran', 'Europe']},
         {'group': 'Yemenis', 'period': '2014-present', 'scale': '4M', 'primary_destinations': ['Oman', 'Saudi Arabia', 'Djibouti']},
-        {'group': 'Kurds', 'period': 'Various', 'scale': '3
+        {'group': 'Kurds', 'period': 'Various', 'scale': '3M+', 'primary_destinations': ['Turkey', 'Iraq', 'Syria', 'Iran', 'Europe']}
+    ]
+    
+    migration_df = pd.DataFrame(migration_data)
+    
+    fig_migration = px.treemap(migration_df, 
+                              path=['group'], 
+                              values='scale',
+                              title="Ethnic Displacement Scale in MENA",
+                              color='scale',
+                              color_continuous_scale='Reds')
+    
+    st.plotly_chart(fig_migration, use_container_width=True)
+    
+    # Methodology note
+    st.info("""
+    **Data Sources**: Conflict data compiled from UN OCHA, UNHCR, ACLED, and historical records. 
+    Current Gaza war statistics from UN and humanitarian organizations (2023-2025). 
+    Displacement figures represent estimates of directly conflict-induced migration.
+    """)
+
+# CLEAN FOOTER
+st.markdown("---")
+st.markdown("**Data Sources**: EPR Core 2021 + Estimates | Gulf citizen data based on demographic studies")
