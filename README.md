@@ -1,6 +1,6 @@
-# MENA Ethnic Groups Visualization
+# MENA Ethnic and religious Groups Visualization
 
-Interactive web app for exploring ethnic group distributions across the Middle East and North Africa region for the year 2021. Data Sources: EPR Core 2021 + Estimates | Gulf citizen data based on demographic studies
+Interactive web app for exploring ethnic and religious groups distributions across the Middle East and North Africa region for the year 2021. Data Sources: EPR Core 2021 + Estimates | Gulf citizen data based on demographic studies
 
 ## 🌐 Live App
 
