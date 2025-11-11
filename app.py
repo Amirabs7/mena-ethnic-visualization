@@ -21,8 +21,8 @@ def load_data():
         # Remove all existing Palestine data and replace with realistic composition
         df = df[df['statename'] != 'Palestine']
         palestine_data = [
-            {'statename': 'Palestine', 'group': 'Palestinian Arabs', 'percentage': 83.0, 'from': 2000, 'to': 2021},
-            {'statename': 'Palestine', 'group': 'Israeli Settlers', 'percentage': 15.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Palestine', 'group': 'Muslim Palestinian Arabs', 'percentage': 83.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Palestine', 'group': 'Jewish Israeli Settlers', 'percentage': 15.0, 'from': 2000, 'to': 2021},
             {'statename': 'Palestine', 'group': 'Others', 'percentage': 2.0, 'from': 2000, 'to': 2021}
         ]
         palestine_df = pd.DataFrame(palestine_data)
@@ -32,7 +32,7 @@ def load_data():
     if 'Tunisia' in df['statename'].values:
         df = df[df['statename'] != 'Tunisia']
         tunisia_data = [
-            {'statename': 'Tunisia', 'group': 'Arab-Amazigh', 'percentage': 98.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Tunisia', 'group': 'Muslim Arab-Amazigh', 'percentage': 98.0, 'from': 2000, 'to': 2021},
             {'statename': 'Tunisia', 'group': 'Others', 'percentage': 2.0, 'from': 2000, 'to': 2021}
         ]
         tunisia_df = pd.DataFrame(tunisia_data)
@@ -45,11 +45,11 @@ def load_data():
     # United Arab Emirates Nationals Ethnic Composition 
     # Emirati citizens have diverse ancestral backgrounds:
     uae_nationals_data = [
-        {'statename': 'United Arab Emirates', 'group': 'Arab Tribes (Qawasim, Bani Yas, etc.)', 'percentage': 65.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Persian-origin Emiratis', 'percentage': 20.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Baloch-origin Emiratis', 'percentage': 8.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'African-origin Emiratis', 'percentage': 5.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Other Emirati groups', 'percentage': 2.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Arab Tribes (Qawasim, Bani Yas, etc.)', 'percentage': 65.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Persian-origin Emiratis', 'percentage': 20.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Baloch-origin Emiratis', 'percentage': 8.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim African-origin Emiratis', 'percentage': 5.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Other Emirati groups', 'percentage': 2.0, 'from': 2000, 'to': 2021},
     ]
     
     uae_nationals_df = pd.DataFrame(uae_nationals_data)
@@ -201,7 +201,7 @@ if country_diversity:
         )
 
 # 5 TABS - ADDED NEW CONFLICT TAB
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["🏛️ Country Profile", "👥 Ethnic Group Focus", "📊 Diversity Analysis", "🔍 Regional Comparisons", "⚔️ Conflict & Migration"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs([" Country Profile", " Ethnic Group Focus", " Diversity Analysis", " Regional Comparisons", " Conflict & Migration"])
 
 with tab1:
     st.subheader("Country Profile - Ethnic Composition")
@@ -326,10 +326,8 @@ with tab3:
         # Add explanation for high diversity countries
         st.markdown("""
         **Understanding High Diversity Scores**:
-        - **Kuwait**: Balanced religious diversity within citizen population
         - **Lebanon**: Complex multi-ethnic and multi-religious composition  
         - **Israel**: Jewish-Arab diversity with multiple subgroups
-        - **Gulf States**: Religious diversity within ethnically Arab populations
         """)
         
         st.dataframe(
