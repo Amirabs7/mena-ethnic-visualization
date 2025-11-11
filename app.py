@@ -32,7 +32,7 @@ def load_data():
     if 'Tunisia' in df['statename'].values:
         df = df[df['statename'] != 'Tunisia']
         tunisia_data = [
-            {'statename': 'Tunisia', 'group': 'Muslim Arab-Amazigh - Sunni Muslims', 'percentage': 98.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Tunisia', 'group': 'Sunni Muslim Arab-Amazigh', 'percentage': 98.0, 'from': 2000, 'to': 2021},
             {'statename': 'Tunisia', 'group': 'Others', 'percentage': 2.0, 'from': 2000, 'to': 2021}
         ]
         tunisia_df = pd.DataFrame(tunisia_data)
@@ -45,11 +45,11 @@ def load_data():
     # United Arab Emirates Nationals Ethnic Composition 
     # Emirati citizens have diverse ancestral backgrounds:
     uae_nationals_data = [
-        {'statename': 'United Arab Emirates', 'group': 'Muslim Arab Tribes (Qawasim, Bani Yas, etc.) - Sunni Muslims', 'percentage': 65.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Muslim Persian-origin Emiratis - Sunni Muslims', 'percentage': 20.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Muslim Baloch-origin Emiratis - Sunni Muslims', 'percentage': 8.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Muslim African-origin Emiratis - Sunni Muslims', 'percentage': 5.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Muslim Other Emirati groups - Sunni Muslims', 'percentage': 2.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Sunni Arab Tribes (Qawasim, Bani Yas, etc.) ', 'percentage': 65.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Sunni Persian-origin Emiratis', 'percentage': 20.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Sunni Baloch-origin Emiratis', 'percentage': 8.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Sunni African-origin Emiratis', 'percentage': 5.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Sunni Other Emirati groups ', 'percentage': 2.0, 'from': 2000, 'to': 2021},
     ]
     
     uae_nationals_df = pd.DataFrame(uae_nationals_data)
