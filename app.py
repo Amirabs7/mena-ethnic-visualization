@@ -28,15 +28,36 @@ def load_data():
         palestine_df = pd.DataFrame(palestine_data)
         df = pd.concat([df, palestine_df], ignore_index=True)
     
+    # FIX: Israel - Simplify to Jews vs Non-Jews
+    if 'Israel' in df['statename'].values:
+        df = df[df['statename'] != 'Israel']
+        israel_data = [
+            {'statename': 'Israel', 'group': 'Jews', 'percentage': 73.5, 'from': 2000, 'to': 2021},
+            {'statename': 'Israel', 'group': 'Non-Jews (Arab Muslims, Christians, Others)', 'percentage': 26.5, 'from': 2000, 'to': 2021}
+        ]
+        israel_df = pd.DataFrame(israel_data)
+        df = pd.concat([df, israel_df], ignore_index=True)
+    
     # FIX: Tunisia composition - 98% Arab-Amazigh, 2% Others
     if 'Tunisia' in df['statename'].values:
         df = df[df['statename'] != 'Tunisia']
         tunisia_data = [
-            {'statename': 'Tunisia', 'group': 'Sunni Muslim Arab-Amazigh', 'percentage': 98.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Tunisia', 'group': 'Muslim Arab-Amazigh - Sunni Muslims', 'percentage': 98.0, 'from': 2000, 'to': 2021},
             {'statename': 'Tunisia', 'group': 'Others', 'percentage': 2.0, 'from': 2000, 'to': 2021}
         ]
         tunisia_df = pd.DataFrame(tunisia_data)
         df = pd.concat([df, tunisia_df], ignore_index=True)
+    
+    # FIX: Mauritania - Add Haratin and Sub-Saharan Africans
+    if 'Mauritania' in df['statename'].values:
+        df = df[df['statename'] != 'Mauritania']
+        mauritania_data = [
+            {'statename': 'Mauritania', 'group': 'Arab-Amazigh - Sunni Muslims', 'percentage': 30.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Mauritania', 'group': 'Haratin - Sunni Muslims', 'percentage': 40.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Mauritania', 'group': 'Sub-Saharan Africans - Sunni Muslims', 'percentage': 30.0, 'from': 2000, 'to': 2021}
+        ]
+        mauritania_df = pd.DataFrame(mauritania_data)
+        df = pd.concat([df, mauritania_df], ignore_index=True)
     
     # FIX: United Arab Emirates data - Focus ONLY on Emirati nationals ethnic composition
     # Remove any existing United Arab Emirates data first
@@ -45,11 +66,11 @@ def load_data():
     # United Arab Emirates Nationals Ethnic Composition 
     # Emirati citizens have diverse ancestral backgrounds:
     uae_nationals_data = [
-        {'statename': 'United Arab Emirates', 'group': 'Muslim Sunni Arab Tribes (Qawasim, Bani Yas, etc.) ', 'percentage': 65.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Muslim Sunni Persian-origin Emiratis', 'percentage': 20.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Muslim Sunni Baloch-origin Emiratis', 'percentage': 8.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Muslim Sunni African-origin Emiratis', 'percentage': 5.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Muslim Sunni Other Emirati groups ', 'percentage': 2.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Arab Tribes (Qawasim, Bani Yas, etc.) - Sunni Muslims', 'percentage': 65.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Persian-origin Emiratis - Sunni Muslims', 'percentage': 20.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Baloch-origin Emiratis - Sunni Muslims', 'percentage': 8.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim African-origin Emiratis - Sunni Muslims', 'percentage': 5.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Other Emirati groups - Sunni Muslims', 'percentage': 2.0, 'from': 2000, 'to': 2021},
     ]
     
     uae_nationals_df = pd.DataFrame(uae_nationals_data)
@@ -106,10 +127,6 @@ def load_data():
     # Morocco - Add Sunni Muslims
     df.loc[(df['statename'] == 'Morocco') & (df['group'].str.contains('Arab')), 'group'] = df.loc[(df['statename'] == 'Morocco') & (df['group'].str.contains('Arab')), 'group'] + ' - Sunni Muslims'
     df.loc[(df['statename'] == 'Morocco') & (df['group'] == 'Amazigh'), 'group'] = 'Amazigh - Sunni Muslims'
-    
-    # Mauritania - Add Sunni Muslims
-    df.loc[(df['statename'] == 'Mauritania') & (df['group'].str.contains('Arab')), 'group'] = df.loc[(df['statename'] == 'Mauritania') & (df['group'].str.contains('Arab')), 'group'] + ' - Sunni Muslims'
-    df.loc[(df['statename'] == 'Mauritania') & (df['group'] == 'Amazigh'), 'group'] = 'Amazigh - Sunni Muslims'
     
     # Syria - Add "Arab" to all groups except Kurds
     df.loc[(df['statename'] == 'Syria') & (~df['group'].str.contains('Kurd')), 'group'] = 'Arab ' + df.loc[(df['statename'] == 'Syria') & (~df['group'].str.contains('Kurd')), 'group']
@@ -492,7 +509,7 @@ with tab5:
     and displacements caused by decades of conflict.
     """)
 
-    # Enhanced conflict data with detailed casualty information
+    # Enhanced conflict data with detailed casualty information including North African conflicts
     conflicts_data = [
         # Israeli-Palestinian conflicts since 1967 with detailed casualty data
         {
@@ -560,6 +577,32 @@ with tab5:
             'countries': ['Israel', 'Palestine'], 
             'displaced': 1900000, 'type': 'War',
             'casualties': '85,530+ total', 'description': 'Ongoing war following Hamas October 7 attacks'
+        },
+        
+        # North African conflicts
+        {
+            'year': 1975, 'name': 'Western Sahara War', 'duration': 3650, 'impact': 'High', 
+            'countries': ['Morocco', 'Western Sahara'], 
+            'displaced': 200000, 'type': 'Territorial Conflict',
+            'casualties': '~15,000 total', 'description': 'Ongoing conflict between Morocco and Polisario Front'
+        },
+        {
+            'year': 1991, 'name': 'Algerian Civil War', 'duration': 2920, 'impact': 'Very High', 
+            'countries': ['Algeria'], 
+            'displaced': 1000000, 'type': 'Civil War',
+            'casualties': '~200,000 total', 'description': 'Conflict between government and Islamist groups'
+        },
+        {
+            'year': 2011, 'name': 'Libyan Civil War', 'duration': 365, 'impact': 'High', 
+            'countries': ['Libya'], 
+            'displaced': 500000, 'type': 'Civil War',
+            'casualties': '~25,000 total', 'description': 'Overthrow of Gaddafi regime'
+        },
+        {
+            'year': 2012, 'name': 'Northern Mali Conflict', 'duration': 2920, 'impact': 'High', 
+            'countries': ['Mali'], 
+            'displaced': 500000, 'type': 'Insurgency',
+            'casualties': '~10,000 total', 'description': 'Tuareg rebellion and Islamist insurgency'
         },
         
         # Other regional conflicts
@@ -746,7 +789,9 @@ with tab5:
         {'group': 'Syrians', 'period': '2011-present', 'scale': 6800000, 'scale_label': '6.8M', 'primary_destinations': ['Turkey', 'Lebanon', 'Jordan', 'Europe']},
         {'group': 'Iraqis', 'period': '2003-present', 'scale': 9200000, 'scale_label': '9.2M', 'primary_destinations': ['Syria', 'Jordan', 'Iran', 'Europe']},
         {'group': 'Yemenis', 'period': '2014-present', 'scale': 4000000, 'scale_label': '4M', 'primary_destinations': ['Oman', 'Saudi Arabia', 'Djibouti']},
-        {'group': 'Kurds', 'period': 'Various', 'scale': 3000000, 'scale_label': '3M+', 'primary_destinations': ['Turkey', 'Iraq', 'Syria', 'Iran', 'Europe']}
+        {'group': 'Kurds', 'period': 'Various', 'scale': 3000000, 'scale_label': '3M+', 'primary_destinations': ['Turkey', 'Iraq', 'Syria', 'Iran', 'Europe']},
+        {'group': 'Saharawis', 'period': '1975-present', 'scale': 200000, 'scale_label': '200K', 'primary_destinations': ['Algeria', 'Mauritania', 'Spain']},
+        {'group': 'Libyans', 'period': '2011-present', 'scale': 500000, 'scale_label': '500K', 'primary_destinations': ['Tunisia', 'Egypt', 'Europe']}
     ]
     
     migration_df = pd.DataFrame(migration_data)
