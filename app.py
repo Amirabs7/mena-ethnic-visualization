@@ -32,7 +32,7 @@ def load_data():
     if 'Tunisia' in df['statename'].values:
         df = df[df['statename'] != 'Tunisia']
         tunisia_data = [
-            {'statename': 'Tunisia', 'group': 'Muslim Arab-Amazigh', 'percentage': 98.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Tunisia', 'group': 'Muslim Arab-Amazigh - Sunni Muslims', 'percentage': 98.0, 'from': 2000, 'to': 2021},
             {'statename': 'Tunisia', 'group': 'Others', 'percentage': 2.0, 'from': 2000, 'to': 2021}
         ]
         tunisia_df = pd.DataFrame(tunisia_data)
@@ -45,11 +45,11 @@ def load_data():
     # United Arab Emirates Nationals Ethnic Composition 
     # Emirati citizens have diverse ancestral backgrounds:
     uae_nationals_data = [
-        {'statename': 'United Arab Emirates', 'group': 'Muslim Arab Tribes (Qawasim, Bani Yas, etc.)', 'percentage': 65.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Muslim Persian-origin Emiratis', 'percentage': 20.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Muslim Baloch-origin Emiratis', 'percentage': 8.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Muslim African-origin Emiratis', 'percentage': 5.0, 'from': 2000, 'to': 2021},
-        {'statename': 'United Arab Emirates', 'group': 'Muslim Other Emirati groups', 'percentage': 2.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Arab Tribes (Qawasim, Bani Yas, etc.) - Sunni Muslims', 'percentage': 65.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Persian-origin Emiratis - Sunni Muslims', 'percentage': 20.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Baloch-origin Emiratis - Sunni Muslims', 'percentage': 8.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim African-origin Emiratis - Sunni Muslims', 'percentage': 5.0, 'from': 2000, 'to': 2021},
+        {'statename': 'United Arab Emirates', 'group': 'Muslim Other Emirati groups - Sunni Muslims', 'percentage': 2.0, 'from': 2000, 'to': 2021},
     ]
     
     uae_nationals_df = pd.DataFrame(uae_nationals_data)
@@ -96,6 +96,55 @@ def load_data():
     gulf_citizen_data = saudi_data + qatar_data + kuwait_data + oman_data + bahrain_data
     gulf_citizen_df = pd.DataFrame(gulf_citizen_data)
     df = pd.concat([df, gulf_citizen_df], ignore_index=True)
+    
+    # NEW UPDATES: Add religious designations to other countries
+    
+    # Algeria - Add Sunni Muslims
+    df.loc[(df['statename'] == 'Algeria') & (df['group'].str.contains('Arab')), 'group'] = df.loc[(df['statename'] == 'Algeria') & (df['group'].str.contains('Arab')), 'group'] + ' - Sunni Muslims'
+    df.loc[(df['statename'] == 'Algeria') & (df['group'] == 'Amazigh'), 'group'] = 'Amazigh - Sunni Muslims'
+    
+    # Morocco - Add Sunni Muslims
+    df.loc[(df['statename'] == 'Morocco') & (df['group'].str.contains('Arab')), 'group'] = df.loc[(df['statename'] == 'Morocco') & (df['group'].str.contains('Arab')), 'group'] + ' - Sunni Muslims'
+    df.loc[(df['statename'] == 'Morocco') & (df['group'] == 'Amazigh'), 'group'] = 'Amazigh - Sunni Muslims'
+    
+    # Mauritania - Add Sunni Muslims
+    df.loc[(df['statename'] == 'Mauritania') & (df['group'].str.contains('Arab')), 'group'] = df.loc[(df['statename'] == 'Mauritania') & (df['group'].str.contains('Arab')), 'group'] + ' - Sunni Muslims'
+    df.loc[(df['statename'] == 'Mauritania') & (df['group'] == 'Amazigh'), 'group'] = 'Amazigh - Sunni Muslims'
+    
+    # Syria - Add "Arab" to all groups except Kurds
+    df.loc[(df['statename'] == 'Syria') & (~df['group'].str.contains('Kurd')), 'group'] = 'Arab ' + df.loc[(df['statename'] == 'Syria') & (~df['group'].str.contains('Kurd')), 'group']
+    
+    # Jordan - Add "Muslims" to percentages that are not Christian Arabs
+    df.loc[(df['statename'] == 'Jordan') & (~df['group'].str.contains('Christian')), 'group'] = df.loc[(df['statename'] == 'Jordan') & (~df['group'].str.contains('Christian')), 'group'] + ' - Muslims'
+    
+    # Libya - Add "Sunni Muslims" to all ethnic groups
+    df.loc[df['statename'] == 'Libya', 'group'] = df.loc[df['statename'] == 'Libya', 'group'] + ' - Sunni Muslims'
+    
+    # Sudan - Complete overhaul
+    if 'Sudan' in df['statename'].values:
+        df = df[df['statename'] != 'Sudan']
+        sudan_data = [
+            {'statename': 'Sudan', 'group': 'Sunni Muslim Arabized Sudanese', 'percentage': 70.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Sudan', 'group': 'Beja - Sunni Muslim', 'percentage': 5.9, 'from': 2000, 'to': 2021},
+            {'statename': 'Sudan', 'group': 'Nuba - Sunni Muslim', 'percentage': 2.5, 'from': 2000, 'to': 2021},
+            {'statename': 'Sudan', 'group': 'Fur - Sunni Muslim', 'percentage': 2.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Sudan', 'group': 'Nubians - Sunni Muslim', 'percentage': 1.3, 'from': 2000, 'to': 2021},
+            {'statename': 'Sudan', 'group': 'Other Groups (Zaghawa, Fallata, Christians, Traditional)', 'percentage': 18.3, 'from': 2000, 'to': 2021}
+        ]
+        sudan_df = pd.DataFrame(sudan_data)
+        df = pd.concat([df, sudan_df], ignore_index=True)
+    
+    # Yemen - Complete overhaul
+    if 'Yemen' in df['statename'].values:
+        df = df[df['statename'] != 'Yemen']
+        yemen_data = [
+            {'statename': 'Yemen', 'group': 'Arab Sunni Islam (Shafi\'i)', 'percentage': 65.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Yemen', 'group': 'Arab Zaydi Islam', 'percentage': 34.0, 'from': 2000, 'to': 2021},
+            {'statename': 'Yemen', 'group': 'Arab Ismaili Shia Islam', 'percentage': 0.5, 'from': 2000, 'to': 2021},
+            {'statename': 'Yemen', 'group': 'Arab Twelver Shia Islam', 'percentage': 0.5, 'from': 2000, 'to': 2021}
+        ]
+        yemen_df = pd.DataFrame(yemen_data)
+        df = pd.concat([df, yemen_df], ignore_index=True)
     
     # FIX: Jordan - Update "Christians" to "Arab Christians"
     df['group'] = df['group'].replace({'Christians': 'Arab Christians'})
@@ -201,7 +250,7 @@ if country_diversity:
         )
 
 # 5 TABS - ADDED NEW CONFLICT TAB
-tab1, tab2, tab3, tab4, tab5 = st.tabs([" Country Profile", " Ethnic Group Focus", " Diversity Analysis", " Regional Comparisons", " Conflict & Migration"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🏛️ Country Profile", "👥 Ethnic Group Focus", "📊 Diversity Analysis", "🔍 Regional Comparisons", "⚔️ Conflict & Migration"])
 
 with tab1:
     st.subheader("Country Profile - Ethnic Composition")
@@ -326,8 +375,10 @@ with tab3:
         # Add explanation for high diversity countries
         st.markdown("""
         **Understanding High Diversity Scores**:
+        - **Kuwait**: Balanced religious diversity within citizen population
         - **Lebanon**: Complex multi-ethnic and multi-religious composition  
         - **Israel**: Jewish-Arab diversity with multiple subgroups
+        - **Gulf States**: Religious diversity within ethnically Arab populations
         """)
         
         st.dataframe(
