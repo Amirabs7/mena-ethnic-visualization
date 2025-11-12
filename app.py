@@ -171,9 +171,9 @@ def load_data():
 df = load_data()
 
 # Streamlit app
-st.set_page_config(page_title="MENA Ethnic Diversity", layout="wide")
+st.set_page_config(page_title="MENA Ethnic and religious Diversity", layout="wide")
 
-st.title("🌍 MENA Ethnic Diversity Dashboard")
+st.title("🌍 MENA Ethnic and religious Diversity Dashboard")
 st.markdown("### Ethnic Composition Across Middle East & North Africa")
 
 # ACADEMIC FOCUS NOTE - UPDATED
