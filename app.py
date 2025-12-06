@@ -179,7 +179,7 @@ st.markdown("### Ethnic Composition Across Middle East & North Africa")
 # ACADEMIC FOCUS NOTE - UPDATED
 st.info("""
 **Methodological Note**: Gulf state data focuses on **citizen population composition** showing religious diversity within Arab national populations. 
-United Arab Emirates shows ethnic diversity within Emirati citizens. This approach provides meaningful comparisons of demographic patterns.
+This approach provides meaningful comparisons of demographic patterns.
 """)
 
 # Sidebar
